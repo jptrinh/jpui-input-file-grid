@@ -690,11 +690,15 @@ export default {
         overflow: hidden;
         cursor: v-bind('isEditing ? "unset" : "pointer"');
         isolation: isolate;
+        height: 100%;
+        width: 100%;
     }
 
     &__content {
         position: relative;
         z-index: 2;
+        height: 100%;
+        width: 100%;
     }
 
     &--disabled {
