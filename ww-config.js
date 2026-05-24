@@ -6,15 +6,16 @@ export default {
         customSettingsPropertiesOrder: [
             // Initial state
             'initialValue',
+            // Add button
+            'addLabelValue',
             // UX properties
-            'type',
             'drop',
-            'reorder',
             'maxFileSize',
             'minFileSize',
             'maxTotalFileSize',
             'maxFiles',
             'required',
+            'disabled',
             'readonly',
             'extensions',
             'customExtensions',
@@ -26,7 +27,6 @@ export default {
                 label: 'Error messages',
                 isCollapsible: true,
                 properties: [
-                    'errorMsgMultipleFiles',
                     'errorMsgMaxFilesReached',
                     'errorMsgTooManyFiles',
                     'errorMsgFileTooSmall',
@@ -36,7 +36,46 @@ export default {
                 ],
             },
         ],
-        customStylePropertiesOrder: [],
+        customStylePropertiesOrder: [
+            {
+                label: 'Layout',
+                isCollapsible: true,
+                properties: ['gridColumns', 'gridGap', 'itemsBorderRadius'],
+            },
+            {
+                label: 'Add button',
+                isCollapsible: true,
+                properties: [
+                    'addIcon',
+                    'addIconColor',
+                    'addIconSize',
+                    'addButtonIconGap',
+                    'addButtonBackground',
+                    'addButtonBorder',
+                    'addButtonFocusOutline',
+                    'addLabelFontSize',
+                    'addLabelFontWeight',
+                    'addLabelColor',
+                    'addButtonOpacity',
+                ],
+            },
+            {
+                label: 'File items',
+                isCollapsible: true,
+                properties: [
+                    'fileItemsOpacity',
+                    'removeIcon',
+                    'removeIconSize',
+                    'removeIconInnerSize',
+                    'removeIconColor',
+                    'removeIconBackground',
+                    'removeIconColorHover',
+                    'removeIconBackgroundHover',
+                    'removeIconBorderRadius',
+                    'removeIconFocusOutline',
+                ],
+            },
+        ],
         hint: (_, sidePanelContent) => {
             if (!sidePanelContent.parentSelection) return null;
             const { header, text, button, args } = sidePanelContent.parentSelection;
@@ -53,7 +92,7 @@ export default {
             }));
         },
     },
-    states: ['dragging'],
+    states: ['dragging', 'add-button-hover', 'disabled', 'readonly'],
     options: {
         displayAllowedValues: ['flex', 'inline-flex', 'block'],
     },
@@ -75,54 +114,135 @@ export default {
     ],
     actions: [
         {
-            label: { en: 'Clear Files' },
+            label: 'Clear Files',
             action: 'clearFiles',
         },
         {
-            label: { en: 'Clear Error' },
+            label: 'Clear Error',
             action: 'clearError',
         },
         {
-            label: { en: 'Remove File' },
+            label: 'Remove File',
             action: 'removeFile',
             args: [
                 {
                     name: 'index',
                     type: 'Number',
-                    label: { en: 'File index' },
-                },
-            ],
-        },
-        {
-            label: { en: 'Reorder Files' },
-            action: 'reorderFiles',
-            args: [
-                {
-                    name: 'fromIndex',
-                    type: 'Number',
-                    label: { en: 'From index' },
-                },
-                {
-                    name: 'toIndex',
-                    type: 'Number',
-                    label: { en: 'To index' },
                 },
             ],
         },
     ],
     properties: {
-        // ======== DROPZONE CONTENT (wwLayout) ========
-        dropzoneContent: {
-            hidden: true,
-            defaultValue: [],
+        // ======== ADD BUTTON ========
+        addLabelValue: {
+            label: { en: 'Label' },
+            type: 'Text',
+            section: 'settings',
+            defaultValue: '',
+            bindable: true,
             /* wwEditor:start */
             bindingValidation: {
-                type: 'array',
-                tooltip: 'Array of elements to display in the dropzone area',
+                type: 'string',
+                tooltip: 'Text label displayed below the add button icon',
             },
             /* wwEditor:end */
         },
-
+        addIcon: {
+            label: { en: 'Icon' },
+            type: 'SystemIcon',
+            section: 'style',
+            defaultValue: 'lucide/upload',
+            bindable: true,
+            states: true,
+            /* wwEditor:start */
+            bindingValidation: {
+                type: 'string',
+                tooltip:
+                    'Always use icons full names in binding.\n\n<b>Icons with partial or cut names will not be included in the published app.</b>\n\nEx:\n<code>if(cond, "lucide/upload", "lucide/plus-square")</code>',
+            },
+            propertyHelp: {
+                tooltip:
+                    'Always use icons full names in binding.\n\n<b>Icons with partial or cut names will not be included in the published app.</b>',
+            },
+            /* wwEditor:end */
+        },
+        addIconColor: {
+            label: { en: 'Icon color' },
+            type: 'Color',
+            section: 'style',
+            defaultValue: '#bbbbbb',
+            bindable: true,
+            responsive: true,
+            states: true,
+            classes: true,
+        },
+        addIconSize: {
+            label: { en: 'Icon size' },
+            type: 'Length',
+            section: 'style',
+            options: {
+                unitChoices: [
+                    { value: 'px', label: 'px', min: 8, max: 80 },
+                    { value: 'rem', label: 'rem', min: 0.5, max: 5 },
+                ],
+                noRange: true,
+                useVar: true,
+            },
+            defaultValue: '24px',
+            bindable: true,
+            responsive: true,
+            states: true,
+            classes: true,
+        },
+        addLabelFontSize: {
+            label: { en: 'Label font size' },
+            type: 'Length',
+            section: 'style',
+            options: {
+                unitChoices: [
+                    { value: 'px', label: 'px', min: 8, max: 48 },
+                    { value: 'rem', label: 'rem', min: 0.5, max: 3 },
+                ],
+                noRange: true,
+                useVar: true,
+            },
+            defaultValue: '12px',
+            bindable: true,
+            responsive: true,
+        },
+        addLabelFontWeight: {
+            label: { en: 'Label font weight' },
+            type: 'TextSelect',
+            section: 'style',
+            options: {
+                options: [
+                    { value: '300', label: 'Light (300)' },
+                    { value: '400', label: 'Regular (400)' },
+                    { value: '500', label: 'Medium (500)' },
+                    { value: '600', label: 'Semi-bold (600)' },
+                    { value: '700', label: 'Bold (700)' },
+                ],
+            },
+            defaultValue: '400',
+            bindable: true,
+            responsive: true,
+            /* wwEditor:start */
+            bindingValidation: {
+                type: 'string',
+                tooltip: 'Font weight for the label: 300 | 400 | 500 | 600 | 700',
+            },
+            /* wwEditor:end */
+        },
+        addLabelColor: {
+            label: { en: 'Label color' },
+            type: 'Color',
+            section: 'style',
+            defaultValue: '#999999',
+            bindable: true,
+            responsive: true,
+            states: true,
+            classes: true,
+        },
         // ======== INITIAL STATE ========
         initialValue: {
             label: { en: 'Initial value' },
@@ -141,26 +261,6 @@ export default {
             /* wwEditor:end */
         },
 
-        type: {
-            label: { en: 'Upload type' },
-            type: 'TextSelect',
-            options: {
-                options: [
-                    { value: 'single', label: { en: 'Single file' } },
-                    { value: 'multi', label: { en: 'Multiple files' } },
-                ],
-            },
-            section: 'settings',
-            defaultValue: 'single',
-            bindable: true,
-            /* wwEditor:start */
-            bindingValidation: {
-                type: 'string',
-                enum: ['single', 'multi'],
-                tooltip: 'A string that defines the upload type: `"single" | "multi"`',
-            },
-            /* wwEditor:end */
-        },
         drop: {
             label: { en: 'Allow drag & drop' },
             type: 'OnOff',
@@ -171,20 +271,6 @@ export default {
             bindingValidation: {
                 type: 'boolean',
                 tooltip: 'A boolean that defines if drag and drop is enabled: `true | false`',
-            },
-            /* wwEditor:end */
-        },
-        reorder: {
-            label: { en: 'Allow reorder' },
-            type: 'OnOff',
-            section: 'settings',
-            defaultValue: false,
-            hidden: content => content.type !== 'multi',
-            bindable: true,
-            /* wwEditor:start */
-            bindingValidation: {
-                type: 'boolean',
-                tooltip: 'A boolean that defines if files can be reordered: `true | false`',
             },
             /* wwEditor:end */
         },
@@ -222,7 +308,6 @@ export default {
             options: { min: 0 },
             section: 'settings',
             defaultValue: 50,
-            hidden: content => content.type !== 'multi',
             bindable: true,
             /* wwEditor:start */
             bindingValidation: {
@@ -237,7 +322,6 @@ export default {
             options: { min: 1 },
             section: 'settings',
             defaultValue: 10,
-            hidden: content => content.type !== 'multi',
             bindable: true,
             /* wwEditor:start */
             bindingValidation: {
@@ -256,6 +340,20 @@ export default {
             bindingValidation: {
                 type: 'boolean',
                 tooltip: 'A boolean that defines if the upload is required: `true | false`',
+            },
+            /* wwEditor:end */
+        },
+        disabled: {
+            label: { en: 'Disabled' },
+            type: 'OnOff',
+            section: 'settings',
+            defaultValue: false,
+            bindable: true,
+            hidden: (content, sidePanelContent, boundProps, wwProps) => !!(wwProps && wwProps.disabled !== undefined),
+            /* wwEditor:start */
+            bindingValidation: {
+                type: 'boolean',
+                tooltip: 'A boolean that defines if the upload is disabled: `true | false`',
             },
             /* wwEditor:end */
         },
@@ -350,21 +448,6 @@ export default {
         },
 
         // ======== ERROR MESSAGE PROPERTIES ========
-        errorMsgMultipleFiles: {
-            label: { en: 'Multiple files in single mode' },
-            type: 'Text',
-            section: 'settings',
-            options: { placeholder: 'Multiple files provided in single file mode' },
-            defaultValue: 'Multiple files provided in single file mode',
-            bindable: true,
-            hidden: content => content.type !== 'single',
-            /* wwEditor:start */
-            bindingValidation: {
-                type: 'string',
-                tooltip: 'Error message when multiple files are dropped in single file mode',
-            },
-            /* wwEditor:end */
-        },
         errorMsgMaxFilesReached: {
             label: { en: 'Max files reached' },
             type: 'Text',
@@ -372,7 +455,6 @@ export default {
             options: { placeholder: 'Maximum number of files ({max}) reached' },
             defaultValue: 'Maximum number of files ({max}) reached',
             bindable: true,
-            hidden: content => content.type !== 'multi',
             /* wwEditor:start */
             bindingValidation: {
                 type: 'string',
@@ -387,7 +469,6 @@ export default {
             options: { placeholder: 'Only {available} more file(s) can be added' },
             defaultValue: 'Only {available} more file(s) can be added',
             bindable: true,
-            hidden: content => content.type !== 'multi',
             /* wwEditor:start */
             bindingValidation: {
                 type: 'string',
@@ -431,7 +512,6 @@ export default {
             options: { placeholder: 'Total size ({total} MB) exceeds maximum ({max} MB)' },
             defaultValue: 'Total size ({total} MB) exceeds maximum ({max} MB)',
             bindable: true,
-            hidden: content => content.type !== 'multi',
             /* wwEditor:start */
             bindingValidation: {
                 type: 'string',
@@ -453,6 +533,250 @@ export default {
                 tooltip: 'Error message for invalid file type. Use {type} for file type, {allowed} for accepted types.',
             },
             /* wwEditor:end */
+        },
+
+        // ======== STYLE PROPERTIES ========
+        // Layout
+        gridColumns: {
+            label: { en: 'Columns' },
+            type: 'Number',
+            section: 'style',
+            options: { min: 0, step: 1 },
+            defaultValue: 3,
+            bindable: true,
+            responsive: true,
+            /* wwEditor:start */
+            bindingValidation: {
+                type: 'number',
+                tooltip: 'Number of grid columns. Set to 0 for automatic flex-wrap layout.',
+            },
+            propertyHelp: {
+                tooltip: 'Set to 0 for automatic layout (items wrap), or enter a number for a fixed column grid.',
+            },
+            /* wwEditor:end */
+        },
+        gridGap: {
+            label: { en: 'Gap' },
+            type: 'Length',
+            section: 'style',
+            options: {
+                unitChoices: [
+                    { value: 'px', label: 'px', min: 0, max: 100 },
+                    { value: 'rem', label: 'rem', min: 0, max: 10 },
+                    { value: '%', label: '%', min: 0, max: 50 },
+                ],
+                noRange: true,
+                useVar: true,
+            },
+            defaultValue: '8px',
+            bindable: true,
+            responsive: true,
+        },
+        // Add button
+        addButtonIconGap: {
+            label: { en: 'Icon & label gap' },
+            type: 'Length',
+            section: 'style',
+            options: {
+                unitChoices: [
+                    { value: 'px', label: 'px', min: 0, max: 50 },
+                    { value: 'rem', label: 'rem', min: 0, max: 5 },
+                ],
+                noRange: true,
+                useVar: true,
+            },
+            defaultValue: '6px',
+            bindable: true,
+            responsive: true,
+        },
+        addButtonBackground: {
+            label: { en: 'Background' },
+            type: 'Color',
+            section: 'style',
+            defaultValue: 'transparent',
+            bindable: true,
+            responsive: true,
+            states: true,
+            classes: true,
+        },
+        addButtonBorder: {
+            type: 'Border',
+            label: { en: 'Border' },
+            section: 'style',
+            bindable: true,
+            responsive: true,
+            states: true,
+            classes: true,
+            defaultValue: '1.5px dashed #ccc',
+        },
+        addButtonFocusOutline: {
+            type: 'Border',
+            label: { en: 'Focus outline' },
+            section: 'style',
+            bindable: true,
+            responsive: true,
+            classes: true,
+            defaultValue: '2px solid #007aff',
+        },
+        addButtonOpacity: {
+            label: { en: 'Opacity' },
+            type: 'Number',
+            section: 'style',
+            options: { min: 0, max: 1, step: 0.01 },
+            defaultValue: 1,
+            bindable: true,
+            responsive: true,
+            states: true,
+            classes: true,
+            /* wwEditor:start */
+            bindingValidation: {
+                type: 'number',
+                tooltip: 'Opacity of the add button, between 0 and 1.',
+            },
+            /* wwEditor:end */
+        },
+        // File items
+        fileItemsOpacity: {
+            label: { en: 'Opacity' },
+            type: 'Number',
+            section: 'style',
+            options: { min: 0, max: 1, step: 0.01 },
+            defaultValue: 1,
+            bindable: true,
+            responsive: true,
+            states: true,
+            classes: true,
+            /* wwEditor:start */
+            bindingValidation: {
+                type: 'number',
+                tooltip: 'Opacity of the file items, between 0 and 1.',
+            },
+            /* wwEditor:end */
+        },
+        removeIcon: {
+            label: { en: 'Remove icon' },
+            type: 'SystemIcon',
+            section: 'style',
+            defaultValue: 'lucide/x',
+            bindable: true,
+            states: true,
+            /* wwEditor:start */
+            bindingValidation: {
+                type: 'string',
+                tooltip:
+                    'Always use icons full names in binding.\n\n<b>Icons with partial or cut names will not be included in the published app.</b>\n\nEx:\n<code>if(cond, "lucide/x", "lucide/x-circle")</code>',
+            },
+            propertyHelp: {
+                tooltip:
+                    'Always use icons full names in binding.\n\n<b>Icons with partial or cut names will not be included in the published app.</b>',
+            },
+            /* wwEditor:end */
+        },
+        removeIconSize: {
+            label: { en: 'Button size' },
+            type: 'Length',
+            section: 'style',
+            options: {
+                unitChoices: [
+                    { value: 'px', label: 'px', min: 10, max: 60 },
+                    { value: 'rem', label: 'rem', min: 0.5, max: 4 },
+                ],
+                noRange: true,
+                useVar: true,
+            },
+            defaultValue: '18px',
+            bindable: true,
+            responsive: true,
+            states: true,
+            classes: true,
+        },
+        removeIconInnerSize: {
+            label: { en: 'Icon size (%)' },
+            type: 'Number',
+            section: 'style',
+            options: { min: 10, max: 100, step: 1 },
+            defaultValue: 60,
+            bindable: true,
+            responsive: true,
+        },
+        removeIconColor: {
+            label: { en: 'Icon color' },
+            type: 'Color',
+            section: 'style',
+            defaultValue: 'rgba(255, 255, 255, 1)',
+            bindable: true,
+            responsive: true,
+        },
+        removeIconBackground: {
+            label: { en: 'Icon background' },
+            type: 'Color',
+            section: 'style',
+            defaultValue: 'rgba(0, 0, 0, 0.45)',
+            bindable: true,
+            responsive: true,
+        },
+        removeIconColorHover: {
+            label: { en: 'Icon color (hover)' },
+            type: 'Color',
+            section: 'style',
+            defaultValue: 'rgba(255, 255, 255, 1)',
+            bindable: true,
+            responsive: true,
+        },
+        removeIconBackgroundHover: {
+            label: { en: 'Background (hover)' },
+            type: 'Color',
+            section: 'style',
+            defaultValue: 'rgba(0, 0, 0, 0.7)',
+            bindable: true,
+            responsive: true,
+        },
+        removeIconBorderRadius: {
+            type: 'Spacing',
+            label: { en: 'Button radius' },
+            section: 'style',
+            options: {
+                unitChoices: [
+                    { value: 'px', label: 'px', min: 0, max: 100 },
+                    { value: '%', label: '%', min: 0, max: 100 },
+                ],
+                isCorner: false,
+                noRange: true,
+                useVar: true,
+            },
+            defaultValue: '50%',
+            bindable: true,
+            responsive: true,
+            states: true,
+            classes: true,
+        },
+        removeIconFocusOutline: {
+            type: 'Border',
+            label: { en: 'Focus outline' },
+            section: 'style',
+            bindable: true,
+            responsive: true,
+            classes: true,
+            defaultValue: '2px solid #007aff',
+        },
+        itemsBorderRadius: {
+            type: 'Spacing',
+            label: { en: 'Border radius' },
+            section: 'style',
+            options: {
+                unitChoices: [
+                    { value: 'px', label: 'px', min: 0, max: 200 },
+                    { value: '%', label: '%', min: 0, max: 50 },
+                ],
+                isCorner: true,
+                noRange: true,
+                useVar: true,
+            },
+            defaultValue: '8px',
+            bindable: true,
+            responsive: true,
+            states: true,
+            classes: true,
         },
 
         // FORM PROPERTIES: Mainly used in the sidepanel for UX purposes

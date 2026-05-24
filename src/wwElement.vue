@@ -4,6 +4,7 @@
         :class="{
             'ww-file-upload--disabled': isDisabled,
             'ww-file-upload--readonly': isReadonly,
+            'ww-file-upload--dragging': isDragging,
         }"
         @dragover.prevent="handleDragOver"
         @dragleave.prevent="handleDragLeave"
@@ -11,28 +12,80 @@
         role="region"
         aria-label="File upload area"
     >
-        <!-- Main upload area -->
-        <div class="ww-file-upload__dropzone" @click="openFileExplorer">
-            <wwLayout path="dropzoneContent" direction="column" class="ww-file-upload__content" />
-        </div>
-
-        <!-- Hidden file input -->
         <input
             ref="fileInput"
             type="file"
             class="ww-file-upload__input"
-            :multiple="type === 'multi'"
+            :multiple="maxFiles !== 1"
             :accept="acceptedFileTypes"
             :required="required && !hasFiles"
             :disabled="isDisabled || isReadonly"
             aria-label="File upload"
             @change="handleFileSelection"
         />
+
+        <div class="ww-file-upload__row">
+            <div v-for="(file, index) in fileList" :key="file.id || index" class="ww-file-upload__item">
+                <img
+                    v-if="isImageFile(file) && getFilePreview(file)"
+                    :src="getFilePreview(file)"
+                    class="ww-file-upload__item-thumb"
+                    :alt="file.name || 'File'"
+                />
+                <div v-else class="ww-file-upload__item-placeholder">
+                    <svg
+                        class="ww-file-upload__item-file-icon"
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.5"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" />
+                        <polyline points="14 2 14 8 20 8" />
+                    </svg>
+                    <span class="ww-file-upload__item-name">{{ truncateFileName(file.name) }}</span>
+                </div>
+                <button
+                    v-if="!isDisabled && !isReadonly"
+                    class="ww-file-upload__item-remove"
+                    type="button"
+                    :aria-label="`Remove ${file.name || 'file'}`"
+                    @click.stop="removeFile(index)"
+                >
+                    <span class="ww-file-upload__remove-icon" v-html="removeIconHtml" />
+                </button>
+            </div>
+
+            <div
+                v-if="showAddButton"
+                class="ww-file-upload__add"
+                role="button"
+                tabindex="0"
+                :aria-label="addLabelText || 'Add file'"
+                @click="openFileExplorer"
+                @keydown.enter.prevent="openFileExplorer"
+                @keydown.space.prevent="openFileExplorer"
+                @mouseenter="isAddButtonHovered = true"
+                @mouseleave="isAddButtonHovered = false"
+            >
+                <span
+                    class="ww-file-upload__add-icon-el"
+                    :style="{ color: computedAddIconColor, width: computedAddIconSize, height: computedAddIconSize }"
+                    v-html="addIconHtml"
+                />
+                <span v-if="addLabelText" class="ww-file-upload__add-label" :style="addLabelStyle">{{
+                    addLabelText
+                }}</span>
+            </div>
+        </div>
     </div>
 </template>
 
 <script>
-import { ref, computed, watch, inject } from 'vue';
+import { ref, computed, watch, watchEffect, inject, reactive, onBeforeUnmount } from 'vue';
 import { validateFile } from './utils/fileValidation';
 import { fileToBase64, fileToBinary } from './utils/fileProcessing';
 
@@ -51,7 +104,7 @@ export default {
         uid: { type: String, required: true },
         wwElementState: { type: Object, required: true },
     },
-    emits: ['trigger-event', 'add-state', 'remove-state'],
+    emits: ['trigger-event', 'add-state', 'remove-state', 'update:content:effect'],
     setup(props, { emit }) {
         const isEditing = computed(() => {
             /* wwEditor:start */
@@ -67,9 +120,8 @@ export default {
 
         const fileInput = ref(null);
         const isDragging = ref(false);
+        const isAddButtonHovered = ref(false);
 
-        const type = computed(() => props.content?.type || 'single');
-        const reorder = computed(() => props.content?.reorder || false);
         const drop = computed(() => props.content?.drop !== false);
         const maxFileSize = computed(() => props.content?.maxFileSize || 10);
         const minFileSize = computed(() => props.content?.minFileSize || 0);
@@ -80,10 +132,42 @@ export default {
         const customExtensions = computed(() => props.content?.customExtensions || '');
         const exposeBase64 = computed(() => props.content?.exposeBase64 || false);
         const exposeBinary = computed(() => props.content?.exposeBinary || false);
+        const addCursorStyle = computed(() => (isEditing.value ? 'default' : 'pointer'));
+
+        // Style computeds
+        const rowDisplay = computed(() => (props.content?.gridColumns > 0 ? 'grid' : 'flex'));
+        const gridTemplateColumns = computed(() =>
+            props.content?.gridColumns > 0 ? `repeat(${props.content.gridColumns}, 1fr)` : 'none'
+        );
+        const computedGridGap = computed(() => props.content?.gridGap || '8px');
+        const computedAddButtonGap = computed(() => props.content?.addButtonIconGap || '6px');
+        const computedAddButtonBackground = computed(() => props.content?.addButtonBackground || 'transparent');
+        const computedAddButtonBorder = computed(() => props.content?.addButtonBorder || '1.5px dashed #ccc');
+        const computedBorderRadius = computed(() => props.content?.itemsBorderRadius || '8px');
+        const computedRemoveIconColor = computed(() => props.content?.removeIconColor || 'rgba(255, 255, 255, 1)');
+        const computedRemoveIconBackground = computed(
+            () => props.content?.removeIconBackground || 'rgba(0, 0, 0, 0.45)'
+        );
+        const computedRemoveIconColorHover = computed(
+            () => props.content?.removeIconColorHover || 'rgba(255, 255, 255, 1)'
+        );
+        const computedRemoveIconBackgroundHover = computed(
+            () => props.content?.removeIconBackgroundHover || 'rgba(0, 0, 0, 0.7)'
+        );
+        const computedRemoveIconBorderRadius = computed(() => props.content?.removeIconBorderRadius || '50%');
+        const computedAddButtonFocusOutline = computed(
+            () => props.content?.addButtonFocusOutline || '2px solid #007aff'
+        );
+        const computedRemoveIconFocusOutline = computed(
+            () => props.content?.removeIconFocusOutline || '2px solid #007aff'
+        );
+        const computedRemoveIconSize = computed(() => props.content?.removeIconSize || '18px');
+        const computedRemoveIconInnerSize = computed(() => `${props.content?.removeIconInnerSize ?? 60}%`);
+        const computedAddButtonOpacity = computed(() => props.content?.addButtonOpacity ?? 1);
+        const computedFileItemsOpacity = computed(() => props.content?.fileItemsOpacity ?? 1);
 
         // Error message templates
         const errorMessages = computed(() => ({
-            multipleFiles: props.content?.errorMsgMultipleFiles || 'Multiple files provided in single file mode',
             maxFilesReached: props.content?.errorMsgMaxFilesReached || 'Maximum number of files ({max}) reached',
             tooManyFiles: props.content?.errorMsgTooManyFiles || 'Only {available} more file(s) can be added',
             fileTooSmall: props.content?.errorMsgFileTooSmall || 'File size ({size} MB) is below minimum ({min} MB)',
@@ -93,14 +177,22 @@ export default {
             invalidType: props.content?.errorMsgInvalidType || 'File type "{type}" is not allowed. Accepted: {allowed}',
         }));
 
-        // Helper to format error messages with placeholders
         const formatMessage = (template, values) => {
             return template.replace(/\{(\w+)\}/g, (match, key) => {
                 return values[key] !== undefined ? values[key] : match;
             });
         };
 
-        const isDisabled = computed(() => props.wwElementState.props.disabled || false);
+        const isDisabled = computed(() => {
+            /* wwEditor:start */
+            if (props.wwEditorState?.isSelected) {
+                return props.wwElementState.states.includes('disabled');
+            }
+            /* wwEditor:end */
+            return props.wwElementState.props.disabled === undefined
+                ? props.content?.disabled || false
+                : props.wwElementState.props.disabled;
+        });
         const isReadonly = computed(() => {
             /* wwEditor:start */
             if (props.wwEditorState?.isSelected) {
@@ -112,7 +204,6 @@ export default {
                 : props.wwElementState.props.readonly;
         });
 
-        // Internal variable for the structured data
         const { value: componentData, setValue: setComponentData } = wwLib.wwVariable.useComponentVariable({
             uid: props.uid,
             name: 'value',
@@ -126,21 +217,16 @@ export default {
             componentType: 'element',
         });
 
-        // Helper to safely get component data parts
         const existingFiles = computed(() => componentData.value?.existingFiles || []);
         const newFiles = computed(() => componentData.value?.newFiles || []);
         const deletedFiles = computed(() => componentData.value?.deletedFiles || []);
-        // Track the last initialValue to avoid unnecessary resets
         const lastInitialValue = ref(null);
 
-        // Watch for initialValue changes and reset existingFiles only when it actually changes
         watch(
             () => props.content?.initialValue,
             newInitialValue => {
                 const initialArray = Array.isArray(newInitialValue) ? newInitialValue : [];
                 const serialized = JSON.stringify(initialArray);
-
-                // Only reset if initialValue actually changed
                 if (serialized !== lastInitialValue.value) {
                     lastInitialValue.value = serialized;
                     setComponentData({
@@ -163,6 +249,53 @@ export default {
 
         const lastError = ref(null);
 
+        const { getIcon } = wwLib.useIcons();
+        const removeIconSvgText = ref(null);
+        watchEffect(async () => {
+            try {
+                if (props.content?.removeIcon) {
+                    removeIconSvgText.value = await getIcon(props.content.removeIcon);
+                } else {
+                    removeIconSvgText.value = null;
+                }
+            } catch {
+                removeIconSvgText.value = null;
+            }
+        });
+        const removeIconHtml = computed(
+            () =>
+                removeIconSvgText.value ||
+                '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><line x1="2" y1="2" x2="8" y2="8"/><line x1="8" y1="2" x2="2" y2="8"/></svg>'
+        );
+
+        const addIconSvgText = ref(null);
+        watchEffect(async () => {
+            try {
+                const iconName = typeof props.content?.addIcon === 'string' ? props.content.addIcon : null;
+                if (iconName) {
+                    addIconSvgText.value = await getIcon(iconName);
+                } else {
+                    addIconSvgText.value = null;
+                }
+            } catch {
+                addIconSvgText.value = null;
+            }
+        });
+        const addIconHtml = computed(
+            () =>
+                addIconSvgText.value ||
+                '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>'
+        );
+        const computedAddIconColor = computed(() => props.content?.addIconColor || '#bbbbbb');
+        const computedAddIconSize = computed(() => props.content?.addIconSize || '24px');
+
+        const addLabelText = computed(() => props.content?.addLabelValue || '');
+        const addLabelStyle = computed(() => ({
+            fontSize: props.content?.addLabelFontSize || '12px',
+            fontWeight: props.content?.addLabelFontWeight || '400',
+            color: props.content?.addLabelColor || '#999999',
+        }));
+
         const useForm = inject('_wwForm:useForm', () => {});
         const fieldName = computed(() => props.content.fieldName);
         const validation = computed(() => props.content.validation);
@@ -174,7 +307,6 @@ export default {
             { elementState: props.wwElementState, emit, sidepanelFormPath: 'form', setValue: setComponentData }
         );
 
-        // Combined list of all files (existing + new) for display purposes
         const fileList = computed(() => [...existingFiles.value, ...newFiles.value]);
         const hasFiles = computed(() => fileList.value.length > 0);
 
@@ -184,7 +316,6 @@ export default {
                 const updatedStatus = Object.fromEntries(
                     Object.entries(newStatus).filter(([key]) => fileNames.includes(key))
                 );
-
                 if (Object.keys(updatedStatus).length !== Object.keys(newStatus).length) {
                     setStatus(updatedStatus);
                 }
@@ -216,7 +347,82 @@ export default {
             }
         });
 
-        // Helper to serialize file objects for local context
+        // Object URL cache for new file previews
+        const previewCache = reactive({});
+
+        const isImageFile = file => {
+            const mimeType = file?.mimeType || file?.type || '';
+            return mimeType.startsWith('image/');
+        };
+
+        watch(
+            fileList,
+            newList => {
+                const currentIds = new Set(newList.filter(f => f.id).map(f => f.id));
+
+                // Revoke URLs for removed files
+                Object.keys(previewCache).forEach(id => {
+                    if (!currentIds.has(id)) {
+                        try {
+                            wwLib.getFrontWindow().URL.revokeObjectURL(previewCache[id]);
+                        } catch (e) {
+                            // ignore
+                        }
+                        delete previewCache[id];
+                    }
+                });
+
+                // Create URLs for new image files (File objects only)
+                newList.forEach(file => {
+                    if (!isImageFile(file)) return;
+                    if (file.url || file.src || file.base64) return;
+                    const id = file.id;
+                    if (!id || previewCache[id]) return;
+                    try {
+                        previewCache[id] = wwLib.getFrontWindow().URL.createObjectURL(file);
+                    } catch (e) {
+                        // ignore
+                    }
+                });
+            },
+            { immediate: true }
+        );
+
+        onBeforeUnmount(() => {
+            Object.values(previewCache).forEach(url => {
+                try {
+                    wwLib.getFrontWindow().URL.revokeObjectURL(url);
+                } catch (e) {
+                    // ignore
+                }
+            });
+        });
+
+        const getFilePreview = file => {
+            if (file?.url) return file.url;
+            if (file?.src) return file.src;
+            if (file?.base64) return file.base64;
+            return previewCache[file?.id] || null;
+        };
+
+        const truncateFileName = name => {
+            if (!name) return '';
+            if (name.length <= 14) return name;
+            const extIndex = name.lastIndexOf('.');
+            if (extIndex > 0) {
+                return name.slice(0, 8) + '…' + name.slice(extIndex);
+            }
+            return name.slice(0, 12) + '…';
+        };
+
+        const showAddButton = computed(() => {
+            if (isReadonly.value) return false;
+            if (maxFiles.value > 0) {
+                return fileList.value.length < maxFiles.value;
+            }
+            return true;
+        });
+
         const serializeFile = file => {
             if (!file) return null;
             const plainObject = {};
@@ -226,7 +432,7 @@ export default {
                 }
             }
             if (file.name) plainObject.name = file.name;
-            if (file.size) plainObject.size = file.size;
+            if (file.size != null) plainObject.size = file.size;
             if (file.type) plainObject.type = file.type;
             if (file.lastModified) plainObject.lastModified = file.lastModified;
             if (file.mimeType) plainObject.mimeType = file.mimeType;
@@ -247,7 +453,6 @@ export default {
             },
         });
 
-        // Drag and drop handlers
         const handleDragOver = event => {
             if (isDisabled.value || isReadonly.value || !drop.value || isEditing.value) return;
             event.stopPropagation();
@@ -259,16 +464,15 @@ export default {
             isDragging.value = false;
         };
 
-        // Methods
         const openFileExplorer = () => {
             if (!isDisabled.value && !isReadonly.value && !isEditing.value) {
-                fileInput.value.click();
+                fileInput.value?.click();
             }
         };
 
         const handleDrop = async event => {
             isDragging.value = false;
-            if (isDisabled.value || isReadonly.value || !drop.value) return;
+            if (isDisabled.value || isReadonly.value || !drop.value || isEditing.value) return;
 
             const items = event.dataTransfer.files;
             if (!items.length) return;
@@ -284,104 +488,52 @@ export default {
             event.target.value = '';
         };
 
-        const processFiles = async fileList => {
-            lastError.value = null; // Reset error state when user tries to add file
-            const filesToProcess = Array.from(fileList);
-
-            // Single mode handling
-            if (type.value === 'single') {
-                if (filesToProcess.length > 1) {
-                    const errorData = {
-                        code: 'SINGLE_MODE_MULTIPLE_FILES',
-                        message: errorMessages.value.multipleFiles,
-                        data: {
-                            count: filesToProcess.length,
-                            acceptedCount: 1,
-                        },
-                    };
-                    lastError.value = errorData;
-                    emit('trigger-event', {
-                        name: 'error',
-                        event: errorData,
-                    });
-                }
-
-                filesToProcess.splice(1);
-                // Clear existing files when in single mode
-                const updatedDeletedImages = [...deletedFiles.value, ...existingFiles.value];
-                setComponentData({
-                    existingFiles: [],
-                    newFiles: [],
-                    deletedFiles: updatedDeletedImages,
-                    allFiles: [],
-                });
-            }
+        const processFiles = async rawFiles => {
+            lastError.value = null;
+            const filesToProcess = Array.from(rawFiles);
 
             let availableSlots = Infinity;
             const currentFileCount = existingFiles.value.length + newFiles.value.length;
-            if (type.value === 'multi' && maxFiles.value > 0) {
+            if (maxFiles.value > 0) {
                 availableSlots = maxFiles.value - currentFileCount;
                 if (availableSlots <= 0) {
-                    const message = formatMessage(errorMessages.value.maxFilesReached, {
-                        max: maxFiles.value,
-                    });
+                    const message = formatMessage(errorMessages.value.maxFilesReached, { max: maxFiles.value });
                     const errorData = {
                         code: 'MAX_FILES_REACHED',
                         message,
-                        data: {
-                            maxFiles: maxFiles.value,
-                            currentCount: currentFileCount,
-                        },
+                        data: { maxFiles: maxFiles.value, currentCount: currentFileCount },
                     };
                     lastError.value = errorData;
-                    emit('trigger-event', {
-                        name: 'error',
-                        event: errorData,
-                    });
-
-                    wwLib.wwNotification.open({
-                        text: { en: message },
-                        color: 'warning',
-                    });
-
+                    emit('trigger-event', { name: 'error', event: errorData });
+                    wwLib.wwNotification.open({ text: { en: message }, color: 'warning' });
                     return;
                 } else if (filesToProcess.length > availableSlots) {
-                    const message = formatMessage(errorMessages.value.tooManyFiles, {
-                        available: availableSlots,
-                    });
+                    const message = formatMessage(errorMessages.value.tooManyFiles, { available: availableSlots });
                     const errorData = {
                         code: 'TOO_MANY_FILES',
                         message,
                         data: {
                             providedCount: filesToProcess.length,
-                            availableSlots: availableSlots,
+                            availableSlots,
                             maxFiles: maxFiles.value,
                             currentCount: currentFileCount,
                         },
                     };
                     lastError.value = errorData;
-                    emit('trigger-event', {
-                        name: 'error',
-                        event: errorData,
-                    });
+                    emit('trigger-event', { name: 'error', event: errorData });
                 }
             }
 
-            // Process valid files
             const limitedFiles = filesToProcess.slice(0, availableSlots);
             const processedFiles = [];
-
-            // Only calculate currentTotalSize for multi-file mode (only new files have size)
-            const currentTotalSize =
-                type.value === 'multi' ? newFiles.value.reduce((sum, f) => sum + (f.size || 0), 0) : 0;
+            const currentTotalSize = newFiles.value.reduce((sum, f) => sum + (f.size || 0), 0);
 
             for (const file of limitedFiles) {
                 const validationResult = validateFile(file, {
                     maxFileSize: maxFileSize.value,
                     minFileSize: minFileSize.value,
-                    // Only apply maxTotalFileSize in multi-file mode
-                    maxTotalFileSize: type.value === 'multi' ? maxTotalFileSize.value : undefined,
-                    currentTotalSize: type.value === 'multi' ? currentTotalSize : 0,
+                    maxTotalFileSize: maxTotalFileSize.value,
+                    currentTotalSize: currentTotalSize,
                     acceptedTypes: acceptedFileTypes.value,
                 });
 
@@ -394,9 +546,8 @@ export default {
                 } else {
                     console.warn(`File validation failed: ${validationResult.reason}`);
                     const fileSizeInMB = (file.size / (1024 * 1024)).toFixed(2);
-
-                    // Get custom message based on constraint type
                     let message = validationResult.reason;
+
                     switch (validationResult.constraint) {
                         case 'MIN_SIZE':
                             message = formatMessage(errorMessages.value.fileTooSmall, {
@@ -435,60 +586,24 @@ export default {
                         },
                     };
                     lastError.value = errorData;
-                    emit('trigger-event', {
-                        name: 'error',
-                        event: errorData,
-                    });
+                    emit('trigger-event', { name: 'error', event: errorData });
 
                     /* wwEditor:start */
-                    wwLib.wwNotification.open({
-                        text: { en: message },
-                        color: 'error',
-                    });
+                    wwLib.wwNotification.open({ text: { en: message }, color: 'error' });
                     /* wwEditor:end */
                 }
             }
 
             if (processedFiles.length > 0) {
-                if (type.value === 'single') {
-                    const newData = {
-                        existingFiles: [],
-                        newFiles: processedFiles,
-                        deletedFiles: [...deletedFiles.value, ...existingFiles.value],
-                        allFiles: processedFiles,
-                    };
-                    setComponentData(newData);
-                    emit('trigger-event', {
-                        name: 'change',
-                        event: { value: newData },
-                    });
-                } else {
-                    const currentNewFiles = [...newFiles.value];
-                    let updatedNewFiles = [...currentNewFiles];
-
-                    const addNextFile = index => {
-                        updatedNewFiles = [...updatedNewFiles, processedFiles[index]];
-                        const newData = {
-                            existingFiles: existingFiles.value,
-                            newFiles: updatedNewFiles,
-                            deletedFiles: deletedFiles.value,
-                            allFiles: [...existingFiles.value, ...updatedNewFiles],
-                        };
-                        setComponentData(newData);
-
-                        if (index < processedFiles.length - 1) {
-                            setTimeout(() => addNextFile(index + 1), 150);
-                        } else {
-                            emit('trigger-event', {
-                                name: 'change',
-                                event: { value: newData },
-                            });
-                        }
-                    };
-
-                    // Start adding files with a small initial delay
-                    setTimeout(() => addNextFile(0), 50);
-                }
+                const updatedNewFiles = [...newFiles.value, ...processedFiles];
+                const newData = {
+                    existingFiles: existingFiles.value,
+                    newFiles: updatedNewFiles,
+                    deletedFiles: deletedFiles.value,
+                    allFiles: [...existingFiles.value, ...updatedNewFiles],
+                };
+                setComponentData(newData);
+                emit('trigger-event', { name: 'change', event: { value: newData } });
             }
         };
 
@@ -499,7 +614,6 @@ export default {
             let newData;
 
             if (index < existingCount) {
-                // Removing an existing image - add to deletedFiles
                 const removedImage = existingFiles.value[index];
                 const updatedExisting = existingFiles.value.filter((_, i) => i !== index);
                 newData = {
@@ -509,7 +623,6 @@ export default {
                     allFiles: [...updatedExisting, ...newFiles.value],
                 };
             } else {
-                // Removing a new file
                 const newFileIndex = index - existingCount;
                 const updatedNewFiles = newFiles.value.filter((_, i) => i !== newFileIndex);
                 newData = {
@@ -521,44 +634,7 @@ export default {
             }
 
             setComponentData(newData);
-
-            emit('trigger-event', {
-                name: 'change',
-                event: { value: newData },
-            });
-        };
-
-        const reorderFiles = (fromIndex, toIndex) => {
-            if (isDisabled.value || isReadonly.value || !reorder.value) return;
-
-            // Combine all files for reordering
-            const combinedFiles = [...existingFiles.value, ...newFiles.value];
-            const [movedItem] = combinedFiles.splice(fromIndex, 1);
-            combinedFiles.splice(toIndex, 0, movedItem);
-
-            // Split back into existing and new (based on whether they have File properties)
-            const reorderedExisting = [];
-            const reorderedNew = [];
-            for (const file of combinedFiles) {
-                if (file instanceof File || file.lastModified) {
-                    reorderedNew.push(file);
-                } else {
-                    reorderedExisting.push(file);
-                }
-            }
-
-            const newData = {
-                existingFiles: reorderedExisting,
-                newFiles: reorderedNew,
-                deletedFiles: deletedFiles.value,
-                allFiles: combinedFiles,
-            };
-            setComponentData(newData);
-
-            emit('trigger-event', {
-                name: 'change',
-                event: { value: newData },
-            });
+            emit('trigger-event', { name: 'change', event: { value: newData } });
         };
 
         const clearFiles = () => {
@@ -569,6 +645,7 @@ export default {
                 allFiles: [],
             };
             setComponentData(newData);
+            emit('trigger-event', { name: 'change', event: { value: newData } });
         };
 
         const clearError = () => {
@@ -591,21 +668,13 @@ export default {
                 method: removeFile,
                 editor: { label: 'Remove File', group: 'File Upload', icon: 'minus' },
             },
-            reorderFiles: {
-                description: 'Reorder files by moving from one index to another',
-                method: reorderFiles,
-                editor: { label: 'Reorder Files', group: 'File Upload', icon: 'arrows-up-down' },
-            },
         });
 
         watch(
             isReadonly,
             value => {
-                if (value) {
-                    emit('add-state', 'readonly');
-                } else {
-                    emit('remove-state', 'readonly');
-                }
+                if (value) emit('add-state', 'readonly');
+                else emit('remove-state', 'readonly');
             },
             { immediate: true }
         );
@@ -613,11 +682,8 @@ export default {
         watch(
             isDisabled,
             value => {
-                if (value) {
-                    emit('add-state', 'disabled');
-                } else {
-                    emit('remove-state', 'disabled');
-                }
+                if (value) emit('add-state', 'disabled');
+                else emit('remove-state', 'disabled');
             },
             { immediate: true }
         );
@@ -625,37 +691,79 @@ export default {
         watch(
             isDragging,
             value => {
-                if (value && !isDisabled.value && !isReadonly.value) {
-                    emit('add-state', 'dragging');
-                } else {
-                    emit('remove-state', 'dragging');
-                }
+                if (value && !isDisabled.value && !isReadonly.value) emit('add-state', 'dragging');
+                else emit('remove-state', 'dragging');
             },
             { immediate: true }
         );
 
+        watch(
+            isAddButtonHovered,
+            value => {
+                if (value && !isDisabled.value && !isReadonly.value) emit('add-state', 'add-button-hover');
+                else emit('remove-state', 'add-button-hover');
+            },
+            { immediate: true }
+        );
+
+        watch(showAddButton, visible => {
+            if (!visible) isAddButtonHovered.value = false;
+        });
+
+        watch(isDisabled, disabled => {
+            if (disabled) isAddButtonHovered.value = false;
+        });
+
         return {
             fileInput,
+            fileList,
             hasFiles,
+            isDragging,
+            isAddButtonHovered,
+            showAddButton,
             isDisabled,
             isReadonly,
             acceptedFileTypes,
+            addCursorStyle,
+            rowDisplay,
+            gridTemplateColumns,
+            computedGridGap,
+            computedAddButtonGap,
+            computedAddButtonBackground,
+            computedAddButtonBorder,
+            computedBorderRadius,
+            computedRemoveIconColor,
+            computedRemoveIconBackground,
+            computedRemoveIconColorHover,
+            computedRemoveIconBackgroundHover,
+            computedRemoveIconBorderRadius,
+            computedRemoveIconSize,
+            computedAddButtonOpacity,
+            computedFileItemsOpacity,
+            computedAddButtonFocusOutline,
+            computedRemoveIconFocusOutline,
+            computedRemoveIconInnerSize,
+            isImageFile,
+            getFilePreview,
+            truncateFileName,
             openFileExplorer,
             handleDragOver,
             handleDragLeave,
             handleDrop,
             handleFileSelection,
-            type,
             required,
-            isEditing,
-
-            // Actions exposed for ww-config.js
+            removeIconHtml,
+            addIconHtml,
+            computedAddIconColor,
+            computedAddIconSize,
+            addLabelText,
+            addLabelStyle,
             clearFiles,
             clearError,
             removeFile,
-            reorderFiles,
 
             /* wwEditor:start */
+            isEditing,
             selectParentElement,
             /* wwEditor:end */
         };
@@ -685,35 +793,153 @@ export default {
         width: 100%;
     }
 
-    &__dropzone {
-        position: relative;
-        overflow: hidden;
-        cursor: v-bind('isEditing ? "unset" : "pointer"');
-        isolation: isolate;
-        height: 100%;
+    &__row {
+        display: v-bind(rowDisplay);
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: v-bind(computedGridGap);
+        grid-template-columns: v-bind(gridTemplateColumns);
+        align-items: flex-start;
         width: 100%;
+        height: 100%;
     }
 
-    &__content {
+    &__item {
         position: relative;
-        z-index: 2;
-        height: 100%;
         width: 100%;
+        aspect-ratio: 1;
+        border-radius: v-bind(computedBorderRadius);
+        overflow: hidden;
+        background: #f0f0f0;
+        flex-shrink: 0;
+        opacity: v-bind(computedFileItemsOpacity);
+    }
+
+    &__item-thumb {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    &__item-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 8px;
+        box-sizing: border-box;
+    }
+
+    &__item-file-icon {
+        width: 26px;
+        height: 26px;
+        color: #aaa;
+        flex-shrink: 0;
+    }
+
+    &__item-name {
+        font-size: 10px;
+        color: #666;
+        text-align: center;
+        line-height: 1.2;
+        max-width: 100%;
+        overflow: hidden;
+        word-break: break-all;
+    }
+
+    &__item-remove {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: v-bind(computedRemoveIconSize);
+        height: v-bind(computedRemoveIconSize);
+        background: v-bind(computedRemoveIconBackground);
+        border: none;
+        border-radius: v-bind(computedRemoveIconBorderRadius);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+        flex-shrink: 0;
+        color: v-bind(computedRemoveIconColor);
+        transition: background 0.15s ease, color 0.15s ease;
+
+        &:hover {
+            background: v-bind(computedRemoveIconBackgroundHover);
+            color: v-bind(computedRemoveIconColorHover);
+        }
+
+        &:focus-visible {
+            outline: v-bind(computedRemoveIconFocusOutline);
+            outline-offset: 2px;
+        }
+    }
+
+    &__remove-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        width: v-bind(computedRemoveIconInnerSize);
+        height: v-bind(computedRemoveIconInnerSize);
+
+        :deep(svg) {
+            width: 100%;
+            height: 100%;
+        }
+    }
+
+    &__add {
+        width: 100%;
+        aspect-ratio: 1;
+        border: v-bind(computedAddButtonBorder);
+        border-radius: v-bind(computedBorderRadius);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: v-bind(computedAddButtonGap);
+        cursor: v-bind(addCursorStyle);
+        flex-shrink: 0;
+        background: v-bind(computedAddButtonBackground);
+        padding: 8px;
+        box-sizing: border-box;
+        user-select: none;
+        opacity: v-bind(computedAddButtonOpacity);
+        transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+
+        &:focus-visible {
+            outline: v-bind(computedAddButtonFocusOutline);
+            outline-offset: 2px;
+        }
+    }
+
+    &__add-icon-el {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+
+        :deep(svg) {
+            width: 100%;
+            height: 100%;
+            transition: color 0.15s ease;
+        }
+    }
+
+    &__add-label {
+        text-align: center;
+        line-height: 1.2;
+        transition: color 0.15s ease;
     }
 
     &--disabled {
-        opacity: 0.6;
         pointer-events: none;
-
-        .ww-file-upload__dropzone {
-            cursor: not-allowed;
-        }
-    }
-
-    &--readonly {
-        .ww-file-upload__dropzone {
-            cursor: default;
-        }
     }
 }
 </style>
