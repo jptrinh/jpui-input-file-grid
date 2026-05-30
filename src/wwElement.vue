@@ -352,7 +352,9 @@ export default {
 
         const isImageFile = file => {
             const mimeType = file?.mimeType || file?.type || '';
-            return mimeType.startsWith('image/');
+            if (mimeType) return mimeType.startsWith('image/');
+            const url = file?.url || file?.src || '';
+            return /\.(jpg|jpeg|png|gif|webp|svg|bmp|ico|avif|tiff?)(\?.*)?$/i.test(url);
         };
 
         watch(
