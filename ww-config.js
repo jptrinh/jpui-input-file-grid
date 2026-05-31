@@ -684,16 +684,28 @@ export default {
         },
         imageObjectPosition: {
             label: { en: 'Image position' },
-            type: 'Text',
+            type: 'TextSelect',
             section: 'style',
-            options: { placeholder: 'center' },
+            options: {
+                options: [
+                    { value: 'center', label: 'Center' },
+                    { value: 'top', label: 'Top' },
+                    { value: 'bottom', label: 'Bottom' },
+                    { value: 'left', label: 'Left' },
+                    { value: 'right', label: 'Right' },
+                    { value: 'top left', label: 'Top left' },
+                    { value: 'top right', label: 'Top right' },
+                    { value: 'bottom left', label: 'Bottom left' },
+                    { value: 'bottom right', label: 'Bottom right' },
+                ],
+            },
             defaultValue: 'center',
             bindable: true,
             responsive: true,
             /* wwEditor:start */
             bindingValidation: {
                 type: 'string',
-                tooltip: 'CSS object-position for image thumbnails. Examples: center | top | bottom left | 50% 25%',
+                tooltip: 'CSS object-position for image thumbnails: center | top | bottom | left | right | top left | top right | bottom left | bottom right',
             },
             propertyHelp: {
                 tooltip: 'Controls where the image is anchored within the file item. Only applies when Image fit is not "fill".',
