@@ -64,6 +64,7 @@ export default {
                 isCollapsible: true,
                 properties: [
                     'fileItemsOpacity',
+                    'itemsBorder',
                     'imageObjectFit',
                     'imageObjectPosition',
                     'removeIcon',
@@ -834,6 +835,16 @@ export default {
             responsive: true,
             classes: true,
             defaultValue: '2px solid #007aff',
+        },
+        itemsBorder: {
+            type: 'Border',
+            label: { en: 'Border' },
+            section: 'style',
+            bindable: true,
+            responsive: true,
+            states: true,
+            classes: true,
+            defaultValue: 'none',
         },
         itemsBorderRadius: {
             type: 'Spacing',

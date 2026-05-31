@@ -166,6 +166,7 @@ export default {
         const computedRemoveIconInnerSize = computed(() => `${props.content?.removeIconInnerSize ?? 60}%`);
         const computedAddButtonOpacity = computed(() => props.content?.addButtonOpacity ?? 1);
         const computedFileItemsOpacity = computed(() => props.content?.fileItemsOpacity ?? 1);
+        const computedItemsBorder = computed(() => props.content?.itemsBorder || 'none');
         const computedImageObjectFit = computed(() => props.content?.imageObjectFit || 'cover');
         const computedImageObjectPosition = computed(() => props.content?.imageObjectPosition || 'center');
 
@@ -746,6 +747,7 @@ export default {
             computedRemoveIconSize,
             computedAddButtonOpacity,
             computedFileItemsOpacity,
+            computedItemsBorder,
             computedImageObjectFit,
             computedImageObjectPosition,
             computedAddButtonFocusOutline,
@@ -816,11 +818,13 @@ export default {
         position: relative;
         width: 100%;
         aspect-ratio: v-bind(computedItemsAspectRatio);
+        border: v-bind(computedItemsBorder);
         border-radius: v-bind(computedBorderRadius);
         overflow: hidden;
         background: #f0f0f0;
         flex-shrink: 0;
         opacity: v-bind(computedFileItemsOpacity);
+        box-sizing: border-box;
     }
 
     &__item-thumb {
