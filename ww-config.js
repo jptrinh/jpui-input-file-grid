@@ -72,8 +72,6 @@ export default {
                     'removeIconInnerSize',
                     'removeIconColor',
                     'removeIconBackground',
-                    'removeIconColorHover',
-                    'removeIconBackgroundHover',
                     'removeIconBorderRadius',
                     'removeIconFocusOutline',
                 ],
@@ -95,7 +93,7 @@ export default {
             }));
         },
     },
-    states: ['dragging', 'add-button-hover', 'disabled', 'readonly'],
+    states: ['dragging', 'add-button-hover', 'file-items-icon-hover', 'disabled', 'readonly'],
     options: {
         displayAllowedValues: ['flex', 'inline-flex', 'block'],
     },
@@ -572,7 +570,8 @@ export default {
                 tooltip: 'CSS aspect-ratio for file items and the add button. Examples: 1 / 1 | 4 / 3 | 16 / 9 | 3 / 4',
             },
             propertyHelp: {
-                tooltip: 'Applies to both file item thumbnails and the add button. Use standard CSS aspect-ratio syntax, e.g. 1 / 1, 4 / 3, 16 / 9.',
+                tooltip:
+                    'Applies to both file item thumbnails and the add button. Use standard CSS aspect-ratio syntax, e.g. 1 / 1, 4 / 3, 16 / 9.',
             },
             /* wwEditor:end */
         },
@@ -706,10 +705,12 @@ export default {
             /* wwEditor:start */
             bindingValidation: {
                 type: 'string',
-                tooltip: 'CSS object-position for image thumbnails: center | top | bottom | left | right | top left | top right | bottom left | bottom right',
+                tooltip:
+                    'CSS object-position for image thumbnails: center | top | bottom | left | right | top left | top right | bottom left | bottom right',
             },
             propertyHelp: {
-                tooltip: 'Controls where the image is anchored within the file item. Only applies when Image fit is not "fill".',
+                tooltip:
+                    'Controls where the image is anchored within the file item. Only applies when Image fit is not "fill".',
             },
             /* wwEditor:end */
         },
@@ -783,6 +784,7 @@ export default {
             defaultValue: 'rgba(255, 255, 255, 1)',
             bindable: true,
             responsive: true,
+            states: true,
         },
         removeIconBackground: {
             label: { en: 'Icon background' },
@@ -791,22 +793,7 @@ export default {
             defaultValue: 'rgba(0, 0, 0, 0.45)',
             bindable: true,
             responsive: true,
-        },
-        removeIconColorHover: {
-            label: { en: 'Icon color (hover)' },
-            type: 'Color',
-            section: 'style',
-            defaultValue: 'rgba(255, 255, 255, 1)',
-            bindable: true,
-            responsive: true,
-        },
-        removeIconBackgroundHover: {
-            label: { en: 'Background (hover)' },
-            type: 'Color',
-            section: 'style',
-            defaultValue: 'rgba(0, 0, 0, 0.7)',
-            bindable: true,
-            responsive: true,
+            states: true,
         },
         removeIconBorderRadius: {
             type: 'Spacing',

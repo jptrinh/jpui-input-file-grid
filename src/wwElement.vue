@@ -54,6 +54,8 @@
                     type="button"
                     :aria-label="`Remove ${file.name || 'file'}`"
                     @click.stop="removeFile(index)"
+                    @mouseenter="isFileItemsIconHovered = true"
+                    @mouseleave="isFileItemsIconHovered = false"
                 >
                     <span class="ww-file-upload__remove-icon" v-html="removeIconHtml" />
                 </button>
@@ -121,6 +123,7 @@ export default {
         const fileInput = ref(null);
         const isDragging = ref(false);
         const isAddButtonHovered = ref(false);
+        const isFileItemsIconHovered = ref(false);
 
         const drop = computed(() => props.content?.drop !== false);
         const maxFileSize = computed(() => props.content?.maxFileSize || 10);
@@ -148,12 +151,6 @@ export default {
         const computedRemoveIconColor = computed(() => props.content?.removeIconColor || 'rgba(255, 255, 255, 1)');
         const computedRemoveIconBackground = computed(
             () => props.content?.removeIconBackground || 'rgba(0, 0, 0, 0.45)'
-        );
-        const computedRemoveIconColorHover = computed(
-            () => props.content?.removeIconColorHover || 'rgba(255, 255, 255, 1)'
-        );
-        const computedRemoveIconBackgroundHover = computed(
-            () => props.content?.removeIconBackgroundHover || 'rgba(0, 0, 0, 0.7)'
         );
         const computedRemoveIconBorderRadius = computed(() => props.content?.removeIconBorderRadius || '50%');
         const computedAddButtonFocusOutline = computed(
@@ -712,12 +709,24 @@ export default {
             { immediate: true }
         );
 
+        watch(
+            isFileItemsIconHovered,
+            value => {
+                if (value && !isDisabled.value && !isReadonly.value) emit('add-state', 'file-items-icon-hover');
+                else emit('remove-state', 'file-items-icon-hover');
+            },
+            { immediate: true }
+        );
+
         watch(showAddButton, visible => {
             if (!visible) isAddButtonHovered.value = false;
         });
 
         watch(isDisabled, disabled => {
-            if (disabled) isAddButtonHovered.value = false;
+            if (disabled) {
+                isAddButtonHovered.value = false;
+                isFileItemsIconHovered.value = false;
+            }
         });
 
         return {
@@ -726,6 +735,7 @@ export default {
             hasFiles,
             isDragging,
             isAddButtonHovered,
+            isFileItemsIconHovered,
             showAddButton,
             isDisabled,
             isReadonly,
@@ -741,8 +751,6 @@ export default {
             computedItemsAspectRatio,
             computedRemoveIconColor,
             computedRemoveIconBackground,
-            computedRemoveIconColorHover,
-            computedRemoveIconBackgroundHover,
             computedRemoveIconBorderRadius,
             computedRemoveIconSize,
             computedAddButtonOpacity,
@@ -881,11 +889,6 @@ export default {
         flex-shrink: 0;
         color: v-bind(computedRemoveIconColor);
         transition: background 0.15s ease, color 0.15s ease;
-
-        &:hover {
-            background: v-bind(computedRemoveIconBackgroundHover);
-            color: v-bind(computedRemoveIconColorHover);
-        }
 
         &:focus-visible {
             outline: v-bind(computedRemoveIconFocusOutline);

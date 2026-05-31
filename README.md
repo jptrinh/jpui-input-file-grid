@@ -113,11 +113,13 @@ Accessible via `context.local.data?.['fileUpload']` in the formula editor:
 
 ## States
 
-| State      | Description                                            |
-| ---------- | ------------------------------------------------------ |
-| `dragging` | Active when a file is being dragged over the component |
-| `disabled` | Component is disabled                                  |
-| `readonly` | Component is in read-only mode                         |
+| State                   | Description                                            |
+| ----------------------- | ------------------------------------------------------ |
+| `dragging`              | Active when a file is being dragged over the component |
+| `add-button-hover`      | Active when the add button is hovered                  |
+| `file-items-icon-hover` | Active when the remove icon on a file item is hovered  |
+| `disabled`              | Component is disabled                                  |
+| `readonly`              | Component is in read-only mode                         |
 
 ## Form Integration
 
@@ -125,6 +127,7 @@ When placed inside a WeWeb form container, the component supports `fieldName`, `
 
 ## Changelog
 
+5/31/2026 - 3.4.3: feat: add file-items-icon-hover state, remove removeIconColorHover and removeIconBackgroundHover props
 5/31/2026 - 3.4.2: feat: add border prop to file items
 5/31/2026 - 3.4.1: fix: change image position property to a select with CSS keyword values
 5/31/2026 - 3.4.0: feat: add image fit, image position, and aspect ratio props for file items and add button
