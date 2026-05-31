@@ -125,4 +125,5 @@ When placed inside a WeWeb form container, the component supports `fieldName`, `
 
 ## Changelog
 
+5/31/2026 - 3.4.0: feat: add image fit, image position, and aspect ratio props for file items and add button
 5/30/2026 - 3.3.1: fix: enhance image file validation to include URL checks

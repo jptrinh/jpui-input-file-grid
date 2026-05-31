@@ -144,6 +144,7 @@ export default {
         const computedAddButtonBackground = computed(() => props.content?.addButtonBackground || 'transparent');
         const computedAddButtonBorder = computed(() => props.content?.addButtonBorder || '1.5px dashed #ccc');
         const computedBorderRadius = computed(() => props.content?.itemsBorderRadius || '8px');
+        const computedItemsAspectRatio = computed(() => props.content?.itemsAspectRatio || '1 / 1');
         const computedRemoveIconColor = computed(() => props.content?.removeIconColor || 'rgba(255, 255, 255, 1)');
         const computedRemoveIconBackground = computed(
             () => props.content?.removeIconBackground || 'rgba(0, 0, 0, 0.45)'
@@ -165,6 +166,8 @@ export default {
         const computedRemoveIconInnerSize = computed(() => `${props.content?.removeIconInnerSize ?? 60}%`);
         const computedAddButtonOpacity = computed(() => props.content?.addButtonOpacity ?? 1);
         const computedFileItemsOpacity = computed(() => props.content?.fileItemsOpacity ?? 1);
+        const computedImageObjectFit = computed(() => props.content?.imageObjectFit || 'cover');
+        const computedImageObjectPosition = computed(() => props.content?.imageObjectPosition || 'center');
 
         // Error message templates
         const errorMessages = computed(() => ({
@@ -734,6 +737,7 @@ export default {
             computedAddButtonBackground,
             computedAddButtonBorder,
             computedBorderRadius,
+            computedItemsAspectRatio,
             computedRemoveIconColor,
             computedRemoveIconBackground,
             computedRemoveIconColorHover,
@@ -742,6 +746,8 @@ export default {
             computedRemoveIconSize,
             computedAddButtonOpacity,
             computedFileItemsOpacity,
+            computedImageObjectFit,
+            computedImageObjectPosition,
             computedAddButtonFocusOutline,
             computedRemoveIconFocusOutline,
             computedRemoveIconInnerSize,
@@ -809,7 +815,7 @@ export default {
     &__item {
         position: relative;
         width: 100%;
-        aspect-ratio: 1;
+        aspect-ratio: v-bind(computedItemsAspectRatio);
         border-radius: v-bind(computedBorderRadius);
         overflow: hidden;
         background: #f0f0f0;
@@ -820,7 +826,8 @@ export default {
     &__item-thumb {
         width: 100%;
         height: 100%;
-        object-fit: cover;
+        object-fit: v-bind(computedImageObjectFit);
+        object-position: v-bind(computedImageObjectPosition);
         display: block;
     }
 
@@ -898,7 +905,7 @@ export default {
 
     &__add {
         width: 100%;
-        aspect-ratio: 1;
+        aspect-ratio: v-bind(computedItemsAspectRatio);
         border: v-bind(computedAddButtonBorder);
         border-radius: v-bind(computedBorderRadius);
         display: flex;

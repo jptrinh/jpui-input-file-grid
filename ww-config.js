@@ -40,7 +40,7 @@ export default {
             {
                 label: 'Layout',
                 isCollapsible: true,
-                properties: ['gridColumns', 'gridGap', 'itemsBorderRadius'],
+                properties: ['gridColumns', 'gridGap', 'itemsAspectRatio', 'itemsBorderRadius'],
             },
             {
                 label: 'Add button',
@@ -64,6 +64,8 @@ export default {
                 isCollapsible: true,
                 properties: [
                     'fileItemsOpacity',
+                    'imageObjectFit',
+                    'imageObjectPosition',
                     'removeIcon',
                     'removeIconSize',
                     'removeIconInnerSize',
@@ -555,6 +557,24 @@ export default {
             },
             /* wwEditor:end */
         },
+        itemsAspectRatio: {
+            label: { en: 'Aspect ratio' },
+            type: 'Text',
+            section: 'style',
+            options: { placeholder: '1 / 1' },
+            defaultValue: '1 / 1',
+            bindable: true,
+            responsive: true,
+            /* wwEditor:start */
+            bindingValidation: {
+                type: 'string',
+                tooltip: 'CSS aspect-ratio for file items and the add button. Examples: 1 / 1 | 4 / 3 | 16 / 9 | 3 / 4',
+            },
+            propertyHelp: {
+                tooltip: 'Applies to both file item thumbnails and the add button. Use standard CSS aspect-ratio syntax, e.g. 1 / 1, 4 / 3, 16 / 9.',
+            },
+            /* wwEditor:end */
+        },
         gridGap: {
             label: { en: 'Gap' },
             type: 'Length',
@@ -636,6 +656,50 @@ export default {
             /* wwEditor:end */
         },
         // File items
+        imageObjectFit: {
+            label: { en: 'Image fit' },
+            type: 'TextSelect',
+            section: 'style',
+            options: {
+                options: [
+                    { value: 'cover', label: 'Cover' },
+                    { value: 'contain', label: 'Contain' },
+                    { value: 'fill', label: 'Fill' },
+                    { value: 'none', label: 'None' },
+                    { value: 'scale-down', label: 'Scale down' },
+                ],
+            },
+            defaultValue: 'cover',
+            bindable: true,
+            responsive: true,
+            /* wwEditor:start */
+            bindingValidation: {
+                type: 'string',
+                tooltip: 'How images fill the file item: cover | contain | fill | none | scale-down',
+            },
+            propertyHelp: {
+                tooltip: 'Controls the CSS object-fit property on image thumbnails.',
+            },
+            /* wwEditor:end */
+        },
+        imageObjectPosition: {
+            label: { en: 'Image position' },
+            type: 'Text',
+            section: 'style',
+            options: { placeholder: 'center' },
+            defaultValue: 'center',
+            bindable: true,
+            responsive: true,
+            /* wwEditor:start */
+            bindingValidation: {
+                type: 'string',
+                tooltip: 'CSS object-position for image thumbnails. Examples: center | top | bottom left | 50% 25%',
+            },
+            propertyHelp: {
+                tooltip: 'Controls where the image is anchored within the file item. Only applies when Image fit is not "fill".',
+            },
+            /* wwEditor:end */
+        },
         fileItemsOpacity: {
             label: { en: 'Opacity' },
             type: 'Number',
