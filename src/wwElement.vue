@@ -24,7 +24,8 @@
             :accept="acceptedFileTypes"
             :required="required && !hasFiles"
             :disabled="isDisabled || isReadonly"
-            aria-label="File upload"
+            tabindex="-1"
+            aria-hidden="true"
             @change="handleFileSelection"
         />
 
@@ -68,7 +69,8 @@
                 v-if="showAddButton"
                 class="ww-file-upload__add"
                 role="button"
-                tabindex="0"
+                :tabindex="isDisabled ? -1 : 0"
+                :aria-disabled="isDisabled ? 'true' : null"
                 :aria-label="addLabelText || 'Add file'"
                 @click="openFileExplorer"
                 @keydown.enter.prevent="openFileExplorer"
@@ -552,7 +554,7 @@ export default {
                 });
 
                 if (validationResult.valid) {
-                    file.id = `file-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                    file.id = `file-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
                     file.mimeType = file.type;
                     if (exposeBase64.value) file.base64 = await fileToBase64(file);
                     if (exposeBinary.value) file.binary = await fileToBinary(file);
