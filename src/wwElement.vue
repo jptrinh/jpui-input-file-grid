@@ -41,6 +41,9 @@
                         draggedIndex !== null && dragOverIndex === index && draggedIndex !== index,
                 }"
                 :draggable="canReorder"
+                :tabindex="canReorder ? 0 : null"
+                :aria-label="canReorder ? fileItemLabel(file, index) : null"
+                @keydown="handleItemKeydown($event, index)"
                 @dragstart="handleItemDragStart($event, index)"
                 @dragover="handleItemDragOver($event, index)"
                 @drop="handleItemDrop($event, index)"
@@ -460,6 +463,14 @@ export default {
             return previewCache[file?.id] || null;
         };
 
+        const fileItemLabel = (file, index) => {
+            const name = file?.name || 'File';
+            if (!canReorder.value) return name;
+            return `${name}, ${index + 1} of ${
+                allFiles.value.length
+            }. Press control or command with the arrow keys to move it.`;
+        };
+
         const truncateFileName = name => {
             if (!name) return '';
             if (name.length <= 14) return name;
@@ -782,6 +793,25 @@ export default {
             reorderFiles(from, index);
         };
 
+        // Drag-only reordering is unusable without a pointer. ctrl/cmd + arrow moves the
+        // focused file; the plain arrows are left alone so they keep their normal meaning.
+        const handleItemKeydown = (event, index) => {
+            if (!canReorder.value) return;
+            if (!event.ctrlKey && !event.metaKey) return;
+
+            const backwards = event.key === 'ArrowLeft' || event.key === 'ArrowUp';
+            const forwards = event.key === 'ArrowRight' || event.key === 'ArrowDown';
+            if (!backwards && !forwards) return;
+
+            const target = backwards ? index - 1 : index + 1;
+            if (target < 0 || target >= allFiles.value.length) return;
+
+            event.preventDefault();
+            // Items are keyed by id, so Vue moves the existing node rather than recreating it
+            // and focus stays with the file the user is moving.
+            reorderFiles(index, target);
+        };
+
         const handleItemDragEnd = () => {
             draggedIndex.value = null;
             dragOverIndex.value = null;
@@ -867,6 +897,8 @@ export default {
             handleItemDragOver,
             handleItemDrop,
             handleItemDragEnd,
+            handleItemKeydown,
+            fileItemLabel,
 
             /* wwEditor:start */
             isEditing,
@@ -929,6 +961,11 @@ export default {
         &:active {
             cursor: grabbing;
         }
+    }
+
+    &__item--reorderable:focus-visible {
+        outline: var(--ww-fu-add-focus-outline, 2px solid #007aff);
+        outline-offset: 2px;
     }
 
     &__item--dragged {
