@@ -159,6 +159,11 @@ export default {
             default: true,
         },
         {
+            name: 'reorder',
+            label: { en: 'On reorder' },
+            event: { value: [], fromIndex: 0, toIndex: 0, file: {} },
+        },
+        {
             name: 'error',
             label: { en: 'On error' },
             event: {
@@ -175,6 +180,14 @@ export default {
         {
             label: 'Clear Error',
             action: 'clearError',
+        },
+        {
+            label: 'Reorder Files',
+            action: 'reorderFiles',
+            args: [
+                { name: 'From index', type: 'Number', required: true },
+                { name: 'To index', type: 'Number', required: true },
+            ],
         },
         {
             label: 'Remove File',

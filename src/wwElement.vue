@@ -691,6 +691,27 @@ export default {
             emit('trigger-event', { name: 'change', event: { value: newData } });
         };
 
+        const reorderFiles = (fromIndex, toIndex) => {
+            if (isDisabled.value || isReadonly.value) return;
+
+            const files = [...allFiles.value];
+            const from = Number(fromIndex);
+            const to = Number(toIndex);
+            if (!Number.isInteger(from) || !Number.isInteger(to)) return;
+            if (from < 0 || from >= files.length || to < 0 || to >= files.length || from === to) return;
+
+            const [moved] = files.splice(from, 1);
+            files.splice(to, 0, moved);
+
+            const newData = buildValue(files, deletedFiles.value);
+            setComponentData(newData);
+            emit('trigger-event', {
+                name: 'reorder',
+                event: { value: newData, fromIndex: from, toIndex: to, file: serializeFile(moved) },
+            });
+            emit('trigger-event', { name: 'change', event: { value: newData } });
+        };
+
         const clearFiles = () => {
             const newData = buildValue([], [...deletedFiles.value, ...existingFiles.value]);
             setComponentData(newData);
@@ -711,6 +732,11 @@ export default {
                 description: 'Clear the last error',
                 method: clearError,
                 editor: { label: 'Clear Error', group: 'File Upload', icon: 'x' },
+            },
+            reorderFiles: {
+                description: 'Move a file from one position to another in allFiles',
+                method: reorderFiles,
+                editor: { label: 'Reorder Files', group: 'File Upload', icon: 'sort' },
             },
             removeFile: {
                 description: 'Remove a file by index',
@@ -758,6 +784,7 @@ export default {
             clearFiles,
             clearError,
             removeFile,
+            reorderFiles,
 
             /* wwEditor:start */
             isEditing,
