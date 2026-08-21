@@ -1,0 +1,484 @@
+{
+    "metadata": {
+        "name": "ww-input-file",
+        "description": "A file upload input displaying uploaded files as a grid of thumbnails with an add button, drag & drop support, size/count/type validation, and optional Base64 or Binary encoding.",
+        "keywords": ["file upload", "file input", "upload", "drag and drop", "image upload", "attachment"],
+        "features": [
+            "Grid of file items with image thumbnails and a fallback file icon + name for non-image files",
+            "Add button with configurable icon, label and styling",
+            "Per-item remove button with configurable icon, size, colors, border, shadow and hover-only visibility",
+            "Drag & drop upload",
+            "Validation for min/max file size, max total size, max number of files and file type",
+            "Customizable error messages with placeholders",
+            "Initial value support: existing files are tracked separately from new uploads and deletions",
+            "Optional Base64 and Binary encoding of uploaded files",
+            "Form container integration with field name and custom validation"
+        ],
+        "inherit": []
+    },
+    "properties": [
+        {
+            "name": "initialValue",
+            "description": "Array of existing items used to initialize the component. These are tracked separately from new uploads and are moved to deletedFiles when removed.",
+            "type": "array",
+            "defaultValue": []
+        },
+        {
+            "name": "addLabelValue",
+            "description": "Text label displayed below the add button icon. Leave empty to show the icon only.",
+            "type": "string",
+            "defaultValue": ""
+        },
+        {
+            "name": "drop",
+            "description": "Allow files to be dropped onto the component",
+            "type": "boolean",
+            "defaultValue": true
+        },
+        {
+            "name": "maxFileSize",
+            "description": "Maximum size per file, in MB",
+            "type": "number",
+            "defaultValue": 10
+        },
+        {
+            "name": "minFileSize",
+            "description": "Minimum size per file, in MB",
+            "type": "number",
+            "defaultValue": 0
+        },
+        {
+            "name": "maxTotalFileSize",
+            "description": "Maximum combined size of all files, in MB",
+            "type": "number",
+            "defaultValue": 50
+        },
+        {
+            "name": "maxFiles",
+            "description": "Maximum number of files. Set to 1 for single file mode, where the file input stops accepting multiple files.",
+            "type": "number",
+            "defaultValue": 10
+        },
+        {
+            "name": "required",
+            "description": "Whether at least one file is required",
+            "type": "boolean",
+            "defaultValue": false
+        },
+        {
+            "name": "disabled",
+            "description": "Disable the component, blocking uploads, drag & drop and file removal. Hides the remove buttons.",
+            "type": "boolean",
+            "defaultValue": false
+        },
+        {
+            "name": "readonly",
+            "description": "Prevent uploads and file removal while keeping the files visible. Hides the remove buttons.",
+            "type": "boolean",
+            "defaultValue": false
+        },
+        {
+            "name": "extensions",
+            "description": "Filter accepted files by type",
+            "type": "string",
+            "options": ["any", "image", "video", "audio", "pdf", "csv", "excel", "word", "json", "custom"],
+            "defaultValue": "any"
+        },
+        {
+            "name": "customExtensions",
+            "description": "Comma-separated list of accepted extensions (e.g. '.html, .xml'). Inactive when extensions is not 'custom'.",
+            "type": "string",
+            "defaultValue": "",
+            "inactiveProperty": {
+                "description": "Inactive when extensions is not 'custom'."
+            }
+        },
+        {
+            "name": "exposeBase64",
+            "description": "Include a base64 string on each uploaded file. Base64 strings are cropped in the editor interface but complete in the variable.",
+            "type": "boolean",
+            "defaultValue": false
+        },
+        {
+            "name": "exposeBinary",
+            "description": "Include binary data on each uploaded file. Binary data appears as an empty object in the editor interface.",
+            "type": "boolean",
+            "defaultValue": false
+        },
+        {
+            "name": "errorMsgMaxFilesReached",
+            "description": "Error message when the max number of files is already reached. Placeholder: {max}.",
+            "type": "string",
+            "defaultValue": "Maximum number of files ({max}) reached"
+        },
+        {
+            "name": "errorMsgTooManyFiles",
+            "description": "Error message when more files are selected than the remaining slots. Placeholder: {available}.",
+            "type": "string",
+            "defaultValue": "Only {available} more file(s) can be added"
+        },
+        {
+            "name": "errorMsgFileTooSmall",
+            "description": "Error message when a file is below the min file size. Placeholders: {size}, {min}. Inactive when minFileSize is 0.",
+            "type": "string",
+            "defaultValue": "File size ({size} MB) is below minimum ({min} MB)",
+            "inactiveProperty": {
+                "description": "Inactive when minFileSize is 0."
+            }
+        },
+        {
+            "name": "errorMsgFileTooLarge",
+            "description": "Error message when a file exceeds the max file size. Placeholders: {size}, {max}.",
+            "type": "string",
+            "defaultValue": "File size ({size} MB) exceeds maximum ({max} MB)"
+        },
+        {
+            "name": "errorMsgTotalSizeExceeded",
+            "description": "Error message when the combined size exceeds the max total size. Placeholders: {total}, {max}.",
+            "type": "string",
+            "defaultValue": "Total size ({total} MB) exceeds maximum ({max} MB)"
+        },
+        {
+            "name": "errorMsgInvalidType",
+            "description": "Error message when a file type is not allowed. Placeholders: {type}, {allowed}. Inactive when extensions is 'any'.",
+            "type": "string",
+            "defaultValue": "File type \"{type}\" is not allowed. Accepted: {allowed}",
+            "inactiveProperty": {
+                "description": "Inactive when extensions is 'any'."
+            }
+        },
+        {
+            "name": "gridColumns",
+            "description": "Number of columns in the grid. Set to 0 for automatic layout where items wrap.",
+            "type": "number",
+            "defaultValue": 3,
+            "responsive": true
+        },
+        {
+            "name": "gridGap",
+            "description": "Gap between file items and the add button",
+            "type": "string",
+            "defaultValue": "8px",
+            "responsive": true
+        },
+        {
+            "name": "itemsAspectRatio",
+            "description": "CSS aspect-ratio applied to both file items and the add button, e.g. '1 / 1', '4 / 3', '16 / 9'.",
+            "type": "string",
+            "defaultValue": "1 / 1",
+            "responsive": true
+        },
+        {
+            "name": "itemsBorderRadius",
+            "description": "Border radius of file items and the add button",
+            "type": "string",
+            "defaultValue": "8px",
+            "responsive": true
+        },
+        {
+            "name": "addIcon",
+            "description": "Icon displayed in the add button. Always use icon full names, e.g. 'lucide/upload'.",
+            "type": "string",
+            "defaultValue": "lucide/upload"
+        },
+        {
+            "name": "addIconColor",
+            "description": "Color of the add button icon",
+            "type": "string",
+            "defaultValue": "#bbbbbb",
+            "responsive": true
+        },
+        {
+            "name": "addIconSize",
+            "description": "Size of the add button icon",
+            "type": "string",
+            "defaultValue": "24px",
+            "responsive": true
+        },
+        {
+            "name": "addButtonIconGap",
+            "description": "Gap between the add button icon and its label",
+            "type": "string",
+            "defaultValue": "6px",
+            "responsive": true
+        },
+        {
+            "name": "addButtonBackground",
+            "description": "Background color of the add button",
+            "type": "string",
+            "defaultValue": "transparent",
+            "responsive": true
+        },
+        {
+            "name": "addButtonBorder",
+            "description": "Border of the add button",
+            "type": "string",
+            "defaultValue": "1.5px dashed #ccc",
+            "responsive": true
+        },
+        {
+            "name": "addButtonFocusOutline",
+            "description": "Outline shown on the add button when it has keyboard focus",
+            "type": "string",
+            "defaultValue": "2px solid #007aff",
+            "responsive": true
+        },
+        {
+            "name": "addLabelFontSize",
+            "description": "Font size of the add button label",
+            "type": "string",
+            "defaultValue": "12px",
+            "responsive": true
+        },
+        {
+            "name": "addLabelFontWeight",
+            "description": "Font weight of the add button label",
+            "type": "string",
+            "options": ["300", "400", "500", "600", "700"],
+            "defaultValue": "400",
+            "responsive": true
+        },
+        {
+            "name": "addLabelColor",
+            "description": "Color of the add button label",
+            "type": "string",
+            "defaultValue": "#999999",
+            "responsive": true
+        },
+        {
+            "name": "addButtonOpacity",
+            "description": "Opacity of the add button, between 0 and 1",
+            "type": "number",
+            "defaultValue": 1,
+            "responsive": true
+        },
+        {
+            "name": "fileItemsOpacity",
+            "description": "Opacity of the file items, between 0 and 1",
+            "type": "number",
+            "defaultValue": 1,
+            "responsive": true
+        },
+        {
+            "name": "itemsBorder",
+            "description": "Border of the file items",
+            "type": "string",
+            "defaultValue": "none",
+            "responsive": true
+        },
+        {
+            "name": "imageObjectFit",
+            "description": "CSS object-fit of image thumbnails",
+            "type": "string",
+            "options": ["cover", "contain", "fill", "none", "scale-down"],
+            "defaultValue": "cover",
+            "responsive": true
+        },
+        {
+            "name": "imageObjectPosition",
+            "description": "CSS object-position of image thumbnails, controlling where the image is anchored in the file item. Has no visible effect when imageObjectFit is 'fill'.",
+            "type": "string",
+            "options": [
+                "center",
+                "top",
+                "bottom",
+                "left",
+                "right",
+                "top left",
+                "top right",
+                "bottom left",
+                "bottom right"
+            ],
+            "defaultValue": "center",
+            "responsive": true
+        },
+        {
+            "name": "removeIconVisibility",
+            "description": "When the remove button is displayed on a file item: 'always' shows it at all times, 'hover' only reveals it when the file item is hovered or the button has keyboard focus.",
+            "type": "string",
+            "options": ["always", "hover"],
+            "defaultValue": "always",
+            "responsive": true
+        },
+        {
+            "name": "removeIcon",
+            "description": "Icon displayed in the remove button of each file item. Always use icon full names, e.g. 'lucide/x'.",
+            "type": "string",
+            "defaultValue": "lucide/x"
+        },
+        {
+            "name": "removeIconSize",
+            "description": "Width and height of the remove button",
+            "type": "string",
+            "defaultValue": "18px",
+            "responsive": true
+        },
+        {
+            "name": "removeIconInnerSize",
+            "description": "Size of the icon inside the remove button, as a percentage of the button size",
+            "type": "number",
+            "defaultValue": 60,
+            "responsive": true
+        },
+        {
+            "name": "removeIconColor",
+            "description": "Color of the remove button icon",
+            "type": "string",
+            "defaultValue": "rgba(255, 255, 255, 1)",
+            "responsive": true
+        },
+        {
+            "name": "removeIconBackground",
+            "description": "Background color of the remove button",
+            "type": "string",
+            "defaultValue": "rgba(0, 0, 0, 0.45)",
+            "responsive": true
+        },
+        {
+            "name": "removeIconBorderRadius",
+            "description": "Border radius of the remove button",
+            "type": "string",
+            "defaultValue": "50%",
+            "responsive": true
+        },
+        {
+            "name": "removeIconBorder",
+            "description": "Border of the remove button",
+            "type": "string",
+            "defaultValue": "none",
+            "responsive": true
+        },
+        {
+            "name": "removeIconShadow",
+            "description": "Box-shadow of the remove button",
+            "type": "string",
+            "defaultValue": "",
+            "responsive": true
+        },
+        {
+            "name": "removeIconFocusOutline",
+            "description": "Outline shown on the remove button when it has keyboard focus",
+            "type": "string",
+            "defaultValue": "2px solid #007aff",
+            "responsive": true
+        },
+        {
+            "name": "fieldName",
+            "description": "Field name used for form data when inside a form container. Inactive when the element is not placed inside a form container.",
+            "type": "string",
+            "defaultValue": "",
+            "inactiveProperty": {
+                "description": "Inactive when the element is not placed inside a form container (sidePanelContent.form?.uid is falsy)."
+            }
+        },
+        {
+            "name": "customValidation",
+            "description": "Enable custom validation formula. Inactive when the element is not placed inside a form container.",
+            "type": "boolean",
+            "defaultValue": false,
+            "inactiveProperty": {
+                "description": "Inactive when the element is not placed inside a form container (sidePanelContent.form?.uid is falsy)."
+            }
+        },
+        {
+            "name": "validation",
+            "description": "Custom validation formula. Inactive when the element is not in a form container or when customValidation is false.",
+            "type": "formula",
+            "defaultValue": "",
+            "inactiveProperty": {
+                "description": "Inactive when the element is not placed inside a form container (sidePanelContent.form?.uid is falsy) or when customValidation is false."
+            }
+        }
+    ],
+    "states": [
+        {
+            "name": "dragging",
+            "description": "A file is being dragged over the component"
+        },
+        {
+            "name": "add-button-hover",
+            "description": "The add button is hovered"
+        },
+        {
+            "name": "file-items-icon-hover",
+            "description": "The remove button of a file item is hovered. Also keeps the remove button visible on the canvas when removeIconVisibility is 'hover'."
+        },
+        {
+            "name": "disabled",
+            "description": "The component is disabled"
+        },
+        {
+            "name": "readonly",
+            "description": "The component is read-only"
+        }
+    ],
+    "events": [
+        {
+            "name": "change",
+            "description": "Triggered when files are added or removed",
+            "payload": {
+                "value": {
+                    "existingFiles": "array",
+                    "newFiles": "array",
+                    "deletedFiles": "array",
+                    "allFiles": "array"
+                }
+            }
+        },
+        {
+            "name": "error",
+            "description": "Triggered when a file fails validation",
+            "payload": {
+                "code": "string",
+                "data": "object"
+            }
+        }
+    ],
+    "actions": [
+        {
+            "label": "Clear Files",
+            "actionName": "clearFiles",
+            "description": "Remove all files. Existing files are moved to deletedFiles."
+        },
+        {
+            "label": "Clear Error",
+            "actionName": "clearError",
+            "description": "Reset the last error state"
+        },
+        {
+            "label": "Remove File",
+            "actionName": "removeFile",
+            "description": "Remove a file by its index in allFiles",
+            "args": [
+                {
+                    "name": "index",
+                    "type": "number"
+                }
+            ]
+        }
+    ],
+    "slots": [],
+    "variables": [
+        {
+            "name": "value",
+            "description": "Object holding existingFiles (from initialValue, not removed), newFiles (uploaded in this session), deletedFiles (removed existing items) and allFiles (existingFiles + newFiles)",
+            "type": "object"
+        },
+        {
+            "name": "status",
+            "description": "Upload status object",
+            "type": "any"
+        }
+    ],
+    "specifications": [
+        "Local context is exposed under context.local.data?.['fileUpload'] with existingFiles, newFiles, deletedFiles, allFiles, status and error.",
+        "Set maxFiles to 1 for single file mode; any higher value allows multiple selection up to that count.",
+        "existingFiles come from initialValue and are never re-uploaded; removing one moves it to deletedFiles so the backend can delete it.",
+        "Only image files get a thumbnail; other file types show a generic file icon with a truncated file name.",
+        "Set removeIconVisibility to 'hover' for a cleaner grid; the button stays keyboard-accessible because it also appears on :focus-visible.",
+        "To style the remove button on canvas while removeIconVisibility is 'hover', select the file-items-icon-hover state.",
+        "Enable exposeBase64 or exposeBinary only when the workflow needs the file payload, since both add significant weight to the variable.",
+        "Inside a form container, set fieldName so the file data is included in the form submission."
+    ],
+    "examples": []
+}
