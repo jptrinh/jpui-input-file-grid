@@ -2,18 +2,12 @@
     "metadata": {
         "name": "jpui-input-file-grid",
         "description": "A file upload input displaying uploaded files as a grid of thumbnails with an add button, drag & drop support, size/count/type validation, and optional Base64 or Binary encoding.",
-        "keywords": [
-            "file upload",
-            "file input",
-            "upload",
-            "drag and drop",
-            "image upload",
-            "attachment"
-        ],
+        "keywords": ["file upload", "file input", "upload", "drag and drop", "image upload", "attachment"],
         "features": [
             "Grid of file items with image thumbnails and a fallback file icon + name for non-image files",
             "Add button with configurable icon, label and styling",
             "Per-item remove button with configurable icon, size, colors, border, shadow and hover-only visibility",
+            "Reordering by drag or keyboard, across existing and newly uploaded files alike",
             "Drag & drop upload",
             "Validation for min/max file size, max total size, max number of files and file type",
             "Customizable error messages with placeholders",
@@ -41,6 +35,12 @@
             "description": "Allow files to be dropped onto the component",
             "type": "boolean",
             "defaultValue": true
+        },
+        {
+            "name": "allowReorder",
+            "description": "Let users reorder files by dragging them, or with ctrl/cmd + arrow keys when a file is focused. Reordering applies to the whole list: a newly uploaded file can be moved in front of an existing one.",
+            "type": "boolean",
+            "defaultValue": false
         },
         {
             "name": "maxFileSize",
@@ -88,18 +88,7 @@
             "name": "extensions",
             "description": "Filter accepted files by type",
             "type": "string",
-            "options": [
-                "any",
-                "image",
-                "video",
-                "audio",
-                "pdf",
-                "csv",
-                "excel",
-                "word",
-                "json",
-                "custom"
-            ],
+            "options": ["any", "image", "video", "audio", "pdf", "csv", "excel", "word", "json", "custom"],
             "defaultValue": "any"
         },
         {
@@ -252,13 +241,7 @@
             "name": "addLabelFontWeight",
             "description": "Font weight of the add button label",
             "type": "string",
-            "options": [
-                "300",
-                "400",
-                "500",
-                "600",
-                "700"
-            ],
+            "options": ["300", "400", "500", "600", "700"],
             "defaultValue": "400",
             "responsive": true
         },
@@ -294,13 +277,7 @@
             "name": "imageObjectFit",
             "description": "CSS object-fit of image thumbnails",
             "type": "string",
-            "options": [
-                "cover",
-                "contain",
-                "fill",
-                "none",
-                "scale-down"
-            ],
+            "options": ["cover", "contain", "fill", "none", "scale-down"],
             "defaultValue": "cover",
             "responsive": true
         },
@@ -326,10 +303,7 @@
             "name": "removeIconVisibility",
             "description": "When the remove button is displayed on a file item: 'always' shows it at all times, 'hover' only reveals it when the file item is hovered or the button has keyboard focus.",
             "type": "string",
-            "options": [
-                "always",
-                "hover"
-            ],
+            "options": ["always", "hover"],
             "defaultValue": "always",
             "responsive": true
         },
@@ -471,6 +445,21 @@
             }
         },
         {
+            "name": "reorder",
+            "description": "Triggered when a file is moved to a new position",
+            "payload": {
+                "value": {
+                    "existingFiles": "array",
+                    "newFiles": "array",
+                    "deletedFiles": "array",
+                    "allFiles": "array"
+                },
+                "fromIndex": "number",
+                "toIndex": "number",
+                "file": "object"
+            }
+        },
+        {
             "name": "error",
             "description": "Triggered when a file fails validation",
             "payload": {
@@ -491,6 +480,21 @@
             "description": "Reset the last error state"
         },
         {
+            "label": "Reorder Files",
+            "actionName": "reorderFiles",
+            "description": "Move a file from one position to another in allFiles",
+            "args": [
+                {
+                    "name": "From index",
+                    "type": "number"
+                },
+                {
+                    "name": "To index",
+                    "type": "number"
+                }
+            ]
+        },
+        {
             "label": "Remove File",
             "actionName": "removeFile",
             "description": "Remove a file by its index in allFiles",
@@ -506,7 +510,7 @@
     "variables": [
         {
             "name": "value",
-            "description": "Object holding existingFiles (from initialValue, not removed), newFiles (uploaded in this session), deletedFiles (removed existing items) and allFiles (existingFiles + newFiles)",
+            "description": "Object holding allFiles (the authoritative, ordered list), existingFiles and newFiles (views over allFiles filtered on each file's isNew flag) and deletedFiles (existing items that were removed)",
             "type": "object"
         },
         {
@@ -518,7 +522,9 @@
     "specifications": [
         "Local context is exposed under context.local.data?.['fileUpload'] with existingFiles, newFiles, deletedFiles, allFiles, status and error.",
         "Set maxFiles to 1 for single file mode; any higher value allows multiple selection up to that count.",
-        "existingFiles come from initialValue and are never re-uploaded; removing one moves it to deletedFiles so the backend can delete it.",
+        "allFiles is the source of truth for order; existingFiles and newFiles are views over it filtered on isNew, so reordering can move a new file in front of an existing one without changing what it is.",
+        "Every file carries a stable id, synthesised for initialValue items that arrive without one. Use it as the key when persisting order.",
+        "existingFiles come from initialValue and are never re-uploaded; removing one moves it to deletedFiles so the backend can delete it. Removing a file that was uploaded in this session does not, since it never reached the backend.",
         "Only image files get a thumbnail; other file types show a generic file icon with a truncated file name.",
         "Set removeIconVisibility to 'hover' for a cleaner grid; the button stays keyboard-accessible because it also appears on :focus-visible.",
         "To style the remove button on canvas while removeIconVisibility is 'hover', select the file-items-icon-hover state.",

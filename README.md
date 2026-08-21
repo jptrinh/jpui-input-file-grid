@@ -37,10 +37,11 @@ the config's states and the package name.
 
 The upload area uses a `wwLayout` dropzone, so you can drag and drop any WeWeb elements (text, icons, images, buttons) inside it to fully customize the look and feel.
 
-### Single & Multi File Modes
+### Reordering
 
--   **Single** - replaces the current file on each upload
--   **Multi** - accumulates files up to a configurable max count
+With **Allow reorder** on, files can be reordered by dragging them, or with ctrl/cmd +
+arrow keys when a file is focused. Reordering spans the whole list: a newly uploaded file
+can be moved in front of one that came from the initial value.
 
 ### Validation
 
@@ -52,39 +53,38 @@ Optionally expose uploaded files as **Base64** or **Binary** data via toggle set
 
 ## Properties
 
-| Property            | Type               | Default  | Description                                                                      |
-| ------------------- | ------------------ | -------- | -------------------------------------------------------------------------------- |
-| Initial value       | `Array` (bindable) | `[]`     | Array of existing items to initialize with. Tracked separately from new uploads. |
-| Upload type         | `TextSelect`       | `single` | `single` or `multi`                                                              |
-| Allow drag & drop   | `OnOff`            | `true`   | Enable/disable drag and drop                                                     |
-| Allow reorder       | `OnOff`            | `false`  | Allow reordering files (multi mode only)                                         |
-| Max file size (MB)  | `Number`           | `10`     | Maximum size per file                                                            |
-| Min file size (MB)  | `Number`           | `0`      | Minimum size per file                                                            |
-| Max total size (MB) | `Number`           | `50`     | Maximum combined size (multi mode only)                                          |
-| Max number of files | `Number`           | `10`     | File count limit (multi mode only)                                               |
-| Required            | `OnOff`            | `false`  | Mark as required                                                                 |
-| Read only           | `OnOff`            | `false`  | Prevent uploads                                                                  |
-| Allowed file types  | `TextSelect`       | `any`    | Filter by type: any, image, video, audio, pdf, csv, excel, word, json, custom    |
-| Custom extensions   | `Text`             | `""`     | Comma-separated extensions when type is `custom` (e.g. `.html, .xml`)            |
-| Expose as Base64    | `OnOff`            | `false`  | Include base64 string on each file                                               |
-| Expose as Binary    | `OnOff`            | `false`  | Include binary data on each file                                                 |
+| Property            | Type               | Default | Description                                                                      |
+| ------------------- | ------------------ | ------- | -------------------------------------------------------------------------------- |
+| Initial value       | `Array` (bindable) | `[]`    | Array of existing items to initialize with. Tracked separately from new uploads. |
+| Allow drag & drop   | `OnOff`            | `true`  | Enable/disable drag and drop                                                     |
+| Allow reorder       | `OnOff`            | `false` | Let users reorder files by drag or ctrl/cmd + arrow keys                         |
+| Max file size (MB)  | `Number`           | `10`    | Maximum size per file                                                            |
+| Min file size (MB)  | `Number`           | `0`     | Minimum size per file                                                            |
+| Max total size (MB) | `Number`           | `50`    | Maximum combined size across all files                                           |
+| Max number of files | `Number`           | `10`    | File count limit. Set to 1 for single-file behaviour                             |
+| Required            | `OnOff`            | `false` | Mark as required                                                                 |
+| Read only           | `OnOff`            | `false` | Prevent uploads                                                                  |
+| Allowed file types  | `TextSelect`       | `any`   | Filter by type: any, image, video, audio, pdf, csv, excel, word, json, custom    |
+| Custom extensions   | `Text`             | `""`    | Comma-separated extensions when type is `custom` (e.g. `.html, .xml`)            |
+| Expose as Base64    | `OnOff`            | `false` | Include base64 string on each file                                               |
+| Expose as Binary    | `OnOff`            | `false` | Include binary data on each file                                                 |
 
 ## File Item Button
 
 The remove button on each file item is styled through the **File item button** group in the style panel:
 
-| Property      | Type                    | Default   | Description                                                                  |
-| ------------- | ----------------------- | --------- | ---------------------------------------------------------------------------- |
-| Visibility    | `TextSelect` (bindable) | `always`  | `always` (always visible) or `hover` (revealed on file item hover or focus)  |
-| Remove icon   | `SystemIcon`            | `lucide/x`| Icon displayed inside the button                                             |
-| Button size   | `Length`                | `18px`    | Width and height of the button                                               |
-| Icon size (%) | `Number`                | `60`      | Icon size relative to the button                                             |
-| Icon color    | `Color`                 | `#ffffff` | Icon color                                                                   |
-| Icon background | `Color`               | `rgba(0, 0, 0, 0.45)` | Button background                                                |
-| Button radius | `Spacing`               | `50%`     | Button border radius                                                         |
-| Button border | `Border`                | `none`    | Button border                                                                |
-| Button shadow | `Shadows`               | `none`    | Button box-shadow                                                            |
-| Focus outline | `Border`                | `2px solid #007aff` | Outline shown on keyboard focus                                  |
+| Property        | Type                    | Default               | Description                                                                 |
+| --------------- | ----------------------- | --------------------- | --------------------------------------------------------------------------- |
+| Visibility      | `TextSelect` (bindable) | `always`              | `always` (always visible) or `hover` (revealed on file item hover or focus) |
+| Remove icon     | `SystemIcon`            | `lucide/x`            | Icon displayed inside the button                                            |
+| Button size     | `Length`                | `18px`                | Width and height of the button                                              |
+| Icon size (%)   | `Number`                | `60`                  | Icon size relative to the button                                            |
+| Icon color      | `Color`                 | `#ffffff`             | Icon color                                                                  |
+| Icon background | `Color`                 | `rgba(0, 0, 0, 0.45)` | Button background                                                           |
+| Button radius   | `Spacing`               | `50%`                 | Button border radius                                                        |
+| Button border   | `Border`                | `none`                | Button border                                                               |
+| Button shadow   | `Shadows`               | `none`                | Button box-shadow                                                           |
+| Focus outline   | `Border`                | `2px solid #007aff`   | Outline shown on keyboard focus                                             |
 
 When Visibility is set to `hover`, the button stays reachable by keyboard (it appears on `:focus-visible`), and selecting the `file-items-icon-hover` state in the editor keeps it visible on the canvas so it can still be styled.
 
@@ -114,12 +114,20 @@ The component exposes a single internal variable called **value** (type: `object
 
 ```js
 {
-  existingFiles: [],  // Items from initialValue that haven't been removed
-  newFiles: [],       // Files added by the user during this session
-  deletedFiles: [],   // Items removed from existingFiles
-  allFiles: []        // existingFiles + newFiles combined
+  allFiles: [],       // Authoritative, ordered list — read this for the user's order
+  existingFiles: [],  // View over allFiles: items that came from initialValue
+  newFiles: [],       // View over allFiles: files added during this session
+  deletedFiles: []    // Items from initialValue that were removed
 }
 ```
+
+`allFiles` is the source of truth. `existingFiles` and `newFiles` are views over it,
+filtered on each file's `isNew` flag, so `isNew` records **where a file came from**, not
+where it sits. That is what lets a newly uploaded file be dragged in front of an existing
+one without changing what it is.
+
+Every file carries a stable `id` — synthesised for `initialValue` items that arrive
+without one — which is what you should key on when persisting the new order.
 
 ## Local Variables
 
@@ -136,10 +144,11 @@ Accessible via `context.local.data?.['fileUpload']` in the formula editor:
 
 ## Triggers
 
-| Event       | Description                                       | Payload                                                          |
-| ----------- | ------------------------------------------------- | ---------------------------------------------------------------- |
-| `On change` | Fires when files are added, removed, or reordered | `{ value: { existingFiles, newFiles, deletedFiles, allFiles } }` |
-| `On error`  | Fires on validation errors                        | `{ code, message, data }`                                        |
+| Event        | Description                                       | Payload                                                          |
+| ------------ | ------------------------------------------------- | ---------------------------------------------------------------- |
+| `On change`  | Fires when files are added, removed, or reordered | `{ value: { existingFiles, newFiles, deletedFiles, allFiles } }` |
+| `On reorder` | Fires when a file is moved to a new position      | `{ value, fromIndex, toIndex, file }`                            |
+| `On error`   | Fires on validation errors                        | `{ code, message, data }`                                        |
 
 ## Component Actions
 
@@ -148,22 +157,22 @@ Accessible via `context.local.data?.['fileUpload']` in the formula editor:
 | Clear Files   | Remove all files and move existing files to deletedFiles | -                                        |
 | Clear Error   | Reset the last error state                               | -                                        |
 | Remove File   | Remove a file by its index in the combined list          | `index` (Number)                         |
-| Reorder Files | Move a file from one position to another                 | `fromIndex` (Number), `toIndex` (Number) |
+| Reorder Files | Move a file from one position to another in `allFiles`   | `fromIndex` (Number), `toIndex` (Number) |
 
 ## States
 
 All states are selector-based, so WeWeb applies them from the DOM — the component emits no `add-state` / `remove-state`.
 
-| State                   | Description                                                    | Matched by                     |
-| ----------------------- | -------------------------------------------------------------- | ------------------------------ |
-| `dragging`              | A file is being dragged over the component                     | `data-ww-dragging` attribute   |
-| `disabled`              | Component is disabled                                          | `data-ww-disabled` attribute   |
-| `readonly`              | Component is in read-only mode                                 | `data-ww-readonly` attribute   |
-| `error`                 | The last upload attempt failed validation                      | `data-ww-error` attribute      |
-| `focus`                 | A control inside the component has focus                       | `:focus-within`                |
-| `focus-visible`         | A control inside the component has keyboard focus              | `:focus-visible`               |
-| `add-button-hover`      | The add button is hovered                                      | `:has(.…__add:hover)`          |
-| `file-items-icon-hover` | A file item remove button is hovered (applies to all at once)  | `:has(.…__item-remove:hover)`  |
+| State                   | Description                                                   | Matched by                    |
+| ----------------------- | ------------------------------------------------------------- | ----------------------------- |
+| `dragging`              | A file is being dragged over the component                    | `data-ww-dragging` attribute  |
+| `disabled`              | Component is disabled                                         | `data-ww-disabled` attribute  |
+| `readonly`              | Component is in read-only mode                                | `data-ww-readonly` attribute  |
+| `error`                 | The last upload attempt failed validation                     | `data-ww-error` attribute     |
+| `focus`                 | A control inside the component has focus                      | `:focus-within`               |
+| `focus-visible`         | A control inside the component has keyboard focus             | `:focus-visible`              |
+| `add-button-hover`      | The add button is hovered                                     | `:has(.…__add:hover)`         |
+| `file-items-icon-hover` | A file item remove button is hovered (applies to all at once) | `:has(.…__item-remove:hover)` |
 
 ## Form Integration
 
@@ -171,6 +180,7 @@ When placed inside a WeWeb form container, the component supports `fieldName`, `
 
 ## Changelog
 
+8/21/2026 - 4.1.0: feat: reorder files by drag or keyboard across existing and new files; allFiles becomes the authoritative ordered list with stable per-file ids
 8/21/2026 - 4.0.0: chore: rename the component to jpui-input-file-grid and point the repository at this fork
 8/21/2026 - 3.7.0: feat: add error, focus and focus-visible states, and drop the two unused root modifier classes
 8/21/2026 - 3.6.3: fix: mark the add button inert when disabled, remove the hidden file input from the tab order and the accessibility tree, and replace deprecated substr
