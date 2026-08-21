@@ -6,6 +6,9 @@
             'ww-file-upload--readonly': isReadonly,
             'ww-file-upload--dragging': isDragging,
         }"
+        :data-ww-dragging="isDraggingState ? 'true' : null"
+        :data-ww-disabled="isDisabled ? 'true' : null"
+        :data-ww-readonly="isReadonly ? 'true' : null"
         @dragover.prevent="handleDragOver"
         @dragleave.prevent="handleDragLeave"
         @drop.prevent="handleDrop"
@@ -55,8 +58,6 @@
                     type="button"
                     :aria-label="`Remove ${file.name || 'file'}`"
                     @click.stop="removeFile(index)"
-                    @mouseenter="isFileItemsIconHovered = true"
-                    @mouseleave="isFileItemsIconHovered = false"
                 >
                     <span class="ww-file-upload__remove-icon" v-html="removeIconHtml" />
                 </button>
@@ -71,14 +72,8 @@
                 @click="openFileExplorer"
                 @keydown.enter.prevent="openFileExplorer"
                 @keydown.space.prevent="openFileExplorer"
-                @mouseenter="isAddButtonHovered = true"
-                @mouseleave="isAddButtonHovered = false"
             >
-                <span
-                    class="ww-file-upload__add-icon-el"
-                    :style="{ color: computedAddIconColor, width: computedAddIconSize, height: computedAddIconSize }"
-                    v-html="addIconHtml"
-                />
+                <span class="ww-file-upload__add-icon-el" v-html="addIconHtml" />
                 <span v-if="addLabelText" class="ww-file-upload__add-label" :style="addLabelStyle">{{
                     addLabelText
                 }}</span>
@@ -123,8 +118,6 @@ export default {
 
         const fileInput = ref(null);
         const isDragging = ref(false);
-        const isAddButtonHovered = ref(false);
-        const isFileItemsIconHovered = ref(false);
 
         const drop = computed(() => props.content?.drop !== false);
         const maxFileSize = computed(() => props.content?.maxFileSize || 10);
@@ -145,17 +138,7 @@ export default {
         );
         const computedGridGap = computed(() => props.content?.gridGap || '8px');
         const computedAddButtonGap = computed(() => props.content?.addButtonIconGap || '6px');
-        const computedAddButtonBackground = computed(() => props.content?.addButtonBackground || 'transparent');
-        const computedAddButtonBorder = computed(() => props.content?.addButtonBorder || '1.5px dashed #ccc');
-        const computedBorderRadius = computed(() => props.content?.itemsBorderRadius || '8px');
         const computedItemsAspectRatio = computed(() => props.content?.itemsAspectRatio || '1 / 1');
-        const computedRemoveIconColor = computed(() => props.content?.removeIconColor || 'rgba(255, 255, 255, 1)');
-        const computedRemoveIconBackground = computed(
-            () => props.content?.removeIconBackground || 'rgba(0, 0, 0, 0.45)'
-        );
-        const computedRemoveIconBorderRadius = computed(() => props.content?.removeIconBorderRadius || '50%');
-        const computedRemoveIconBorder = computed(() => props.content?.removeIconBorder || 'none');
-        const computedRemoveIconShadow = computed(() => props.content?.removeIconShadow || 'none');
         const isRemoveButtonHoverOnly = computed(() => {
             if (props.content?.removeIconVisibility !== 'hover') return false;
             /* wwEditor:start */
@@ -164,17 +147,7 @@ export default {
             /* wwEditor:end */
             return true;
         });
-        const computedAddButtonFocusOutline = computed(
-            () => props.content?.addButtonFocusOutline || '2px solid #007aff'
-        );
-        const computedRemoveIconFocusOutline = computed(
-            () => props.content?.removeIconFocusOutline || '2px solid #007aff'
-        );
-        const computedRemoveIconSize = computed(() => props.content?.removeIconSize || '18px');
         const computedRemoveIconInnerSize = computed(() => `${props.content?.removeIconInnerSize ?? 60}%`);
-        const computedAddButtonOpacity = computed(() => props.content?.addButtonOpacity ?? 1);
-        const computedFileItemsOpacity = computed(() => props.content?.fileItemsOpacity ?? 1);
-        const computedItemsBorder = computed(() => props.content?.itemsBorder || 'none');
         const computedImageObjectFit = computed(() => props.content?.imageObjectFit || 'cover');
         const computedImageObjectPosition = computed(() => props.content?.imageObjectPosition || 'center');
 
@@ -298,14 +271,10 @@ export default {
                 addIconSvgText.value ||
                 '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>'
         );
-        const computedAddIconColor = computed(() => props.content?.addIconColor || '#bbbbbb');
-        const computedAddIconSize = computed(() => props.content?.addIconSize || '24px');
-
         const addLabelText = computed(() => props.content?.addLabelValue || '');
         const addLabelStyle = computed(() => ({
             fontSize: props.content?.addLabelFontSize || '12px',
             fontWeight: props.content?.addLabelFontWeight || '400',
-            color: props.content?.addLabelColor || '#999999',
         }));
 
         const useForm = inject('_wwForm:useForm', () => {});
@@ -466,6 +435,10 @@ export default {
                 error: lastError,
             },
         });
+
+        // The `dragging` state is applicative: it is exposed as an attribute the state
+        // selector matches, and stays off while the component cannot accept a drop.
+        const isDraggingState = computed(() => isDragging.value && !isDisabled.value && !isReadonly.value);
 
         const handleDragOver = event => {
             if (isDisabled.value || isReadonly.value || !drop.value || isEditing.value) return;
@@ -684,69 +657,12 @@ export default {
             },
         });
 
-        watch(
-            isReadonly,
-            value => {
-                if (value) emit('add-state', 'readonly');
-                else emit('remove-state', 'readonly');
-            },
-            { immediate: true }
-        );
-
-        watch(
-            isDisabled,
-            value => {
-                if (value) emit('add-state', 'disabled');
-                else emit('remove-state', 'disabled');
-            },
-            { immediate: true }
-        );
-
-        watch(
-            isDragging,
-            value => {
-                if (value && !isDisabled.value && !isReadonly.value) emit('add-state', 'dragging');
-                else emit('remove-state', 'dragging');
-            },
-            { immediate: true }
-        );
-
-        watch(
-            isAddButtonHovered,
-            value => {
-                if (value && !isDisabled.value && !isReadonly.value) emit('add-state', 'add-button-hover');
-                else emit('remove-state', 'add-button-hover');
-            },
-            { immediate: true }
-        );
-
-        watch(
-            isFileItemsIconHovered,
-            value => {
-                if (value && !isDisabled.value && !isReadonly.value) emit('add-state', 'file-items-icon-hover');
-                else emit('remove-state', 'file-items-icon-hover');
-            },
-            { immediate: true }
-        );
-
-        watch(showAddButton, visible => {
-            if (!visible) isAddButtonHovered.value = false;
-        });
-
-        watch(isDisabled, disabled => {
-            if (disabled) {
-                isAddButtonHovered.value = false;
-                isFileItemsIconHovered.value = false;
-            }
-        });
-
         return {
             fileInput,
             fileList,
             hasFiles,
             isDragging,
-            isAddButtonHovered,
-            isFileItemsIconHovered,
+            isDraggingState,
             showAddButton,
             isDisabled,
             isReadonly,
@@ -756,24 +672,10 @@ export default {
             gridTemplateColumns,
             computedGridGap,
             computedAddButtonGap,
-            computedAddButtonBackground,
-            computedAddButtonBorder,
-            computedBorderRadius,
             computedItemsAspectRatio,
-            computedRemoveIconColor,
-            computedRemoveIconBackground,
-            computedRemoveIconBorderRadius,
-            computedRemoveIconBorder,
-            computedRemoveIconShadow,
             isRemoveButtonHoverOnly,
-            computedRemoveIconSize,
-            computedAddButtonOpacity,
-            computedFileItemsOpacity,
-            computedItemsBorder,
             computedImageObjectFit,
             computedImageObjectPosition,
-            computedAddButtonFocusOutline,
-            computedRemoveIconFocusOutline,
             computedRemoveIconInnerSize,
             isImageFile,
             getFilePreview,
@@ -786,8 +688,6 @@ export default {
             required,
             removeIconHtml,
             addIconHtml,
-            computedAddIconColor,
-            computedAddIconSize,
             addLabelText,
             addLabelStyle,
             clearFiles,
@@ -840,12 +740,12 @@ export default {
         position: relative;
         width: 100%;
         aspect-ratio: v-bind(computedItemsAspectRatio);
-        border: v-bind(computedItemsBorder);
-        border-radius: v-bind(computedBorderRadius);
+        border: var(--ww-fu-item-border, none);
+        border-radius: var(--ww-fu-item-radius, 8px);
         overflow: hidden;
         background: #f0f0f0;
         flex-shrink: 0;
-        opacity: v-bind(computedFileItemsOpacity);
+        opacity: var(--ww-fu-item-opacity, 1);
         box-sizing: border-box;
     }
 
@@ -890,24 +790,24 @@ export default {
         position: absolute;
         top: 4px;
         right: 4px;
-        width: v-bind(computedRemoveIconSize);
-        height: v-bind(computedRemoveIconSize);
-        background: v-bind(computedRemoveIconBackground);
-        border: v-bind(computedRemoveIconBorder);
-        border-radius: v-bind(computedRemoveIconBorderRadius);
-        box-shadow: v-bind(computedRemoveIconShadow);
+        width: var(--ww-fu-remove-size, 18px);
+        height: var(--ww-fu-remove-size, 18px);
+        background: var(--ww-fu-remove-bg, rgba(0, 0, 0, 0.45));
+        border: var(--ww-fu-remove-border, none);
+        border-radius: var(--ww-fu-remove-radius, 50%);
+        box-shadow: var(--ww-fu-remove-shadow, none);
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
         padding: 0;
         flex-shrink: 0;
-        color: v-bind(computedRemoveIconColor);
+        color: var(--ww-fu-remove-color, rgba(255, 255, 255, 1));
         transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease, border-color 0.15s ease,
             box-shadow 0.15s ease;
 
         &:focus-visible {
-            outline: v-bind(computedRemoveIconFocusOutline);
+            outline: var(--ww-fu-remove-focus-outline, 2px solid #007aff);
             outline-offset: 2px;
         }
     }
@@ -944,8 +844,8 @@ export default {
     &__add {
         width: 100%;
         aspect-ratio: v-bind(computedItemsAspectRatio);
-        border: v-bind(computedAddButtonBorder);
-        border-radius: v-bind(computedBorderRadius);
+        border: var(--ww-fu-add-border, 1.5px dashed #ccc);
+        border-radius: var(--ww-fu-item-radius, 8px);
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -953,15 +853,15 @@ export default {
         gap: v-bind(computedAddButtonGap);
         cursor: v-bind(addCursorStyle);
         flex-shrink: 0;
-        background: v-bind(computedAddButtonBackground);
+        background: var(--ww-fu-add-bg, transparent);
         padding: 8px;
         box-sizing: border-box;
         user-select: none;
-        opacity: v-bind(computedAddButtonOpacity);
+        opacity: var(--ww-fu-add-opacity, 1);
         transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 
         &:focus-visible {
-            outline: v-bind(computedAddButtonFocusOutline);
+            outline: var(--ww-fu-add-focus-outline, 2px solid #007aff);
             outline-offset: 2px;
         }
     }
@@ -971,6 +871,9 @@ export default {
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
+        color: var(--ww-fu-add-icon-color, #bbbbbb);
+        width: var(--ww-fu-add-icon-size, 24px);
+        height: var(--ww-fu-add-icon-size, 24px);
 
         :deep(svg) {
             width: 100%;
@@ -980,6 +883,7 @@ export default {
     }
 
     &__add-label {
+        color: var(--ww-fu-add-label-color, #999999);
         text-align: center;
         line-height: 1.2;
         transition: color 0.15s ease;

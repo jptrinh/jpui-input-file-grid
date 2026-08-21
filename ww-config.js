@@ -97,7 +97,44 @@ export default {
             }));
         },
     },
-    states: ['dragging', 'add-button-hover', 'file-items-icon-hover', 'disabled', 'readonly'],
+    // Style-panel properties marked `states` / `classes` are owned by the style compiler:
+    // it emits one rule per state, breakpoint and design-system class from these custom
+    // properties. The scoped SCSS consumes them with `var(--x, fallback)`.
+    css({ content }) {
+        return [
+            // Add button
+            { property: '--ww-fu-add-icon-color', value: content?.addIconColor },
+            { property: '--ww-fu-add-icon-size', value: content?.addIconSize },
+            { property: '--ww-fu-add-label-color', value: content?.addLabelColor },
+            { property: '--ww-fu-add-bg', value: content?.addButtonBackground },
+            { property: '--ww-fu-add-border', value: content?.addButtonBorder },
+            { property: '--ww-fu-add-focus-outline', value: content?.addButtonFocusOutline },
+            { property: '--ww-fu-add-opacity', value: content?.addButtonOpacity },
+            // File items
+            { property: '--ww-fu-item-opacity', value: content?.fileItemsOpacity },
+            { property: '--ww-fu-item-border', value: content?.itemsBorder },
+            { property: '--ww-fu-item-radius', value: content?.itemsBorderRadius },
+            // File item button
+            { property: '--ww-fu-remove-size', value: content?.removeIconSize },
+            { property: '--ww-fu-remove-color', value: content?.removeIconColor },
+            { property: '--ww-fu-remove-bg', value: content?.removeIconBackground },
+            { property: '--ww-fu-remove-radius', value: content?.removeIconBorderRadius },
+            { property: '--ww-fu-remove-border', value: content?.removeIconBorder },
+            { property: '--ww-fu-remove-shadow', value: content?.removeIconShadow },
+            { property: '--ww-fu-remove-focus-outline', value: content?.removeIconFocusOutline },
+        ];
+    },
+    states: [
+        // Applicative states have no pseudo-class: the component exposes an attribute and
+        // the state selects on it.
+        { label: 'dragging', selector: '&[data-ww-dragging="true"]' },
+        { label: 'disabled', selector: '&[data-ww-disabled="true"]' },
+        { label: 'readonly', selector: '&[data-ww-readonly="true"]' },
+        // Hover is expressible in CSS, so it needs no component code at all. `:has()` keeps
+        // the selector anchored on the root, which is what the compiler scopes its rules to.
+        { label: 'add-button-hover', selector: '&:has(.ww-file-upload__add:hover)' },
+        { label: 'file-items-icon-hover', selector: '&:has(.ww-file-upload__item-remove:hover)' },
+    ],
     options: {
         displayAllowedValues: ['flex', 'inline-flex', 'block'],
     },

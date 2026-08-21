@@ -146,6 +146,7 @@ When placed inside a WeWeb form container, the component supports `fieldName`, `
 
 ## Changelog
 
+8/21/2026 - 3.6.0: refactor: port the five component states from the legacy add-state/remove-state emit API to selector-based states, and move the state- and class-aware style properties to the ww-config css() hook
 8/21/2026 - 3.5.0: feat: add border, shadow and visibility (always / on hover) props for the file item remove button, and split style props into a dedicated "File item button" group
 5/31/2026 - 3.4.3: feat: add file-items-icon-hover state, remove removeIconColorHover and removeIconBackgroundHover props
 5/31/2026 - 3.4.2: feat: add border prop to file items
