@@ -184,6 +184,7 @@ When placed inside a WeWeb form container, the component supports `fieldName`, `
 
 ## Changelog
 
+8/21/2026 - 4.1.3: fix: dropping a reordered file on the insertion line cancelled the drop, because the gap between two items belongs to no item
 8/21/2026 - 4.1.2: feat: show an insertion line in the gap the dragged file will drop into, instead of outlining the file it would displace
 8/21/2026 - 4.1.1: fix: declare the reorder drag refs (ReferenceError on load) and return maxFiles to the template, which made the file picker always accept multiple files
 8/21/2026 - 4.1.0: feat: reorder files by drag or keyboard across existing and new files; allFiles becomes the authoritative ordered list with stable per-file ids

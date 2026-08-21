@@ -29,7 +29,7 @@
             @change="handleFileSelection"
         />
 
-        <div class="ww-file-upload__row">
+        <div class="ww-file-upload__row" @dragover="handleRowDragOver" @drop="handleRowDrop">
             <div
                 v-for="(file, index) in fileList"
                 :key="file.id || index"
@@ -814,19 +814,43 @@ export default {
             };
         };
 
+        // reorderFiles inserts into the list *after* the source has been removed, so a gap
+        // beyond the source shifts down by one. Dropping into either gap next to the file
+        // itself resolves to its current index, which reorderFiles treats as a no-op.
+        const completeReorderDrop = fallbackGap => {
+            const from = draggedIndex.value;
+            const gap = dropGapIndex.value ?? fallbackGap;
+            clearReorderDrag();
+            if (from === null || gap === null || gap === undefined) return;
+            reorderFiles(from, gap > from ? gap - 1 : gap);
+        };
+
         const handleItemDrop = (event, index) => {
             if (draggedIndex.value === null) return;
             event.preventDefault();
             event.stopPropagation();
+            completeReorderDrop(index);
+        };
 
-            const from = draggedIndex.value;
-            const gap = dropGapIndex.value ?? index;
-            clearReorderDrag();
+        // The insertion line is drawn in the gap between two items, and nothing occupies that
+        // gap: a drop there lands on the row. Without these the event reached the root, whose
+        // dragover reports dropEffect 'none' for an internal drag — which tells the browser to
+        // cancel the drop, so releasing on the line did nothing. Dropping on the add button
+        // ends up here too, so the row has no dead zones.
+        const handleRowDragOver = event => {
+            if (draggedIndex.value === null) return;
+            event.preventDefault();
+            event.stopPropagation();
+            if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+        };
 
-            // reorderFiles inserts into the list *after* the source has been removed, so a gap
-            // beyond the source shifts down by one. Dropping into either gap next to the file
-            // itself resolves to its current index, which reorderFiles treats as a no-op.
-            reorderFiles(from, gap > from ? gap - 1 : gap);
+        const handleRowDrop = event => {
+            if (draggedIndex.value === null) return;
+            event.preventDefault();
+            event.stopPropagation();
+            // Keep the gap the line is already showing: the pointer is between items, so there
+            // is nothing new to measure and the drop lands where the user was shown it would.
+            completeReorderDrop(null);
         };
 
         // Drag-only reordering is unusable without a pointer. ctrl/cmd + arrow moves the
@@ -936,6 +960,8 @@ export default {
             handleItemDragStart,
             handleItemDragOver,
             handleItemDrop,
+            handleRowDragOver,
+            handleRowDrop,
             handleItemDragEnd,
             handleItemKeydown,
             fileItemLabel,
