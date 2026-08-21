@@ -44,3 +44,5 @@ typings/
 # Mac files
 .DS_STORE
 CLAUDE.md
+# WeWeb CLI build scratch
+tmp-build
