@@ -10,6 +10,7 @@ export default {
             'addLabelValue',
             // UX properties
             'drop',
+            'allowReorder',
             'maxFileSize',
             'minFileSize',
             'maxTotalFileSize',
@@ -330,6 +331,23 @@ export default {
             /* wwEditor:end */
         },
 
+        allowReorder: {
+            label: { en: 'Allow reorder' },
+            type: 'OnOff',
+            section: 'settings',
+            defaultValue: false,
+            bindable: true,
+            /* wwEditor:start */
+            bindingValidation: {
+                type: 'boolean',
+                tooltip: 'A boolean value: \n\n`true` or `false`',
+            },
+            propertyHelp: {
+                tooltip:
+                    'Let users reorder files by dragging them, or with ctrl/cmd + arrow keys when a file is focused.\n\nReordering applies to the whole list: a newly uploaded file can be moved in front of an existing one. Read the resulting order from <code>allFiles</code>.',
+            },
+            /* wwEditor:end */
+        },
         drop: {
             label: { en: 'Allow drag & drop' },
             type: 'OnOff',

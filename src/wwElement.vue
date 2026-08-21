@@ -30,12 +30,28 @@
         />
 
         <div class="ww-file-upload__row">
-            <div v-for="(file, index) in fileList" :key="file.id || index" class="ww-file-upload__item">
+            <div
+                v-for="(file, index) in fileList"
+                :key="file.id || index"
+                class="ww-file-upload__item"
+                :class="{
+                    'ww-file-upload__item--reorderable': canReorder,
+                    'ww-file-upload__item--dragged': draggedIndex === index,
+                    'ww-file-upload__item--drag-over':
+                        draggedIndex !== null && dragOverIndex === index && draggedIndex !== index,
+                }"
+                :draggable="canReorder"
+                @dragstart="handleItemDragStart($event, index)"
+                @dragover="handleItemDragOver($event, index)"
+                @drop="handleItemDrop($event, index)"
+                @dragend="handleItemDragEnd"
+            >
                 <img
                     v-if="isImageFile(file) && getFilePreview(file)"
                     :src="getFilePreview(file)"
                     class="ww-file-upload__item-thumb"
                     :alt="file.name || 'File'"
+                    draggable="false"
                 />
                 <div v-else class="ww-file-upload__item-placeholder">
                     <svg
@@ -505,7 +521,24 @@ export default {
             return isDragging.value && !isDisabled.value && !isReadonly.value;
         });
 
-        const canAcceptDrop = computed(() => !isDisabled.value && !isReadonly.value && drop.value && !isEditing.value);
+        const canAcceptDrop = computed(
+            () =>
+                !isDisabled.value &&
+                !isReadonly.value &&
+                drop.value &&
+                !isEditing.value &&
+                // A reorder drag is internal: it must not raise the incoming-file state.
+                draggedIndex.value === null
+        );
+
+        const canReorder = computed(
+            () =>
+                !!props.content?.allowReorder &&
+                !isDisabled.value &&
+                !isReadonly.value &&
+                !isEditing.value &&
+                allFiles.value.length > 1
+        );
 
         // Cancelling `dragenter` is what makes this element the drag's current target. Without
         // it the browser retargets to the document, `dragover` never fires here, and the drop
@@ -712,6 +745,48 @@ export default {
             emit('trigger-event', { name: 'change', event: { value: newData } });
         };
 
+        // Item drags and the root's incoming-file drop are two separate drag systems sharing
+        // one subtree. The item handlers stop propagation so the root never sees a reorder
+        // drag, and draggedIndex keeps the root's own state suppressed for the dragenter that
+        // fires before any item handler runs.
+        const handleItemDragStart = (event, index) => {
+            if (!canReorder.value) return;
+            draggedIndex.value = index;
+            dragOverIndex.value = index;
+            if (event.dataTransfer) {
+                event.dataTransfer.effectAllowed = 'move';
+                // Firefox will not start a drag unless some data is attached.
+                try {
+                    event.dataTransfer.setData('text/plain', String(index));
+                } catch (e) {
+                    // ignore
+                }
+            }
+        };
+
+        const handleItemDragOver = (event, index) => {
+            if (draggedIndex.value === null) return;
+            event.preventDefault();
+            event.stopPropagation();
+            if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+            dragOverIndex.value = index;
+        };
+
+        const handleItemDrop = (event, index) => {
+            if (draggedIndex.value === null) return;
+            event.preventDefault();
+            event.stopPropagation();
+            const from = draggedIndex.value;
+            draggedIndex.value = null;
+            dragOverIndex.value = null;
+            reorderFiles(from, index);
+        };
+
+        const handleItemDragEnd = () => {
+            draggedIndex.value = null;
+            dragOverIndex.value = null;
+        };
+
         const clearFiles = () => {
             const newData = buildValue([], [...deletedFiles.value, ...existingFiles.value]);
             setComponentData(newData);
@@ -785,6 +860,13 @@ export default {
             clearError,
             removeFile,
             reorderFiles,
+            canReorder,
+            draggedIndex,
+            dragOverIndex,
+            handleItemDragStart,
+            handleItemDragOver,
+            handleItemDrop,
+            handleItemDragEnd,
 
             /* wwEditor:start */
             isEditing,
@@ -839,6 +921,23 @@ export default {
         flex-shrink: 0;
         opacity: var(--ww-fu-item-opacity, 1);
         box-sizing: border-box;
+    }
+
+    &__item--reorderable {
+        cursor: grab;
+
+        &:active {
+            cursor: grabbing;
+        }
+    }
+
+    &__item--dragged {
+        opacity: 0.4;
+    }
+
+    &__item--drag-over {
+        outline: 2px dashed currentColor;
+        outline-offset: -2px;
     }
 
     &__item-thumb {
