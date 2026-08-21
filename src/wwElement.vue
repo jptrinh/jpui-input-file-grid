@@ -51,6 +51,7 @@
                 <button
                     v-if="!isDisabled && !isReadonly"
                     class="ww-file-upload__item-remove"
+                    :class="{ 'ww-file-upload__item-remove--hover-only': isRemoveButtonHoverOnly }"
                     type="button"
                     :aria-label="`Remove ${file.name || 'file'}`"
                     @click.stop="removeFile(index)"
@@ -153,6 +154,16 @@ export default {
             () => props.content?.removeIconBackground || 'rgba(0, 0, 0, 0.45)'
         );
         const computedRemoveIconBorderRadius = computed(() => props.content?.removeIconBorderRadius || '50%');
+        const computedRemoveIconBorder = computed(() => props.content?.removeIconBorder || 'none');
+        const computedRemoveIconShadow = computed(() => props.content?.removeIconShadow || 'none');
+        const isRemoveButtonHoverOnly = computed(() => {
+            if (props.content?.removeIconVisibility !== 'hover') return false;
+            /* wwEditor:start */
+            // Keep the button visible in the editor when previewing its hover state
+            if (props.wwElementState?.states?.includes('file-items-icon-hover')) return false;
+            /* wwEditor:end */
+            return true;
+        });
         const computedAddButtonFocusOutline = computed(
             () => props.content?.addButtonFocusOutline || '2px solid #007aff'
         );
@@ -752,6 +763,9 @@ export default {
             computedRemoveIconColor,
             computedRemoveIconBackground,
             computedRemoveIconBorderRadius,
+            computedRemoveIconBorder,
+            computedRemoveIconShadow,
+            isRemoveButtonHoverOnly,
             computedRemoveIconSize,
             computedAddButtonOpacity,
             computedFileItemsOpacity,
@@ -879,8 +893,9 @@ export default {
         width: v-bind(computedRemoveIconSize);
         height: v-bind(computedRemoveIconSize);
         background: v-bind(computedRemoveIconBackground);
-        border: none;
+        border: v-bind(computedRemoveIconBorder);
         border-radius: v-bind(computedRemoveIconBorderRadius);
+        box-shadow: v-bind(computedRemoveIconShadow);
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -888,12 +903,28 @@ export default {
         padding: 0;
         flex-shrink: 0;
         color: v-bind(computedRemoveIconColor);
-        transition: background 0.15s ease, color 0.15s ease;
+        transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease, border-color 0.15s ease,
+            box-shadow 0.15s ease;
 
         &:focus-visible {
             outline: v-bind(computedRemoveIconFocusOutline);
             outline-offset: 2px;
         }
+    }
+
+    &__item-remove--hover-only {
+        opacity: 0;
+        pointer-events: none;
+
+        &:focus-visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+    }
+
+    &__item:hover &__item-remove--hover-only {
+        opacity: 1;
+        pointer-events: auto;
     }
 
     &__remove-icon {

@@ -55,6 +55,25 @@ Optionally expose uploaded files as **Base64** or **Binary** data via toggle set
 | Expose as Base64    | `OnOff`            | `false`  | Include base64 string on each file                                               |
 | Expose as Binary    | `OnOff`            | `false`  | Include binary data on each file                                                 |
 
+## File Item Button
+
+The remove button on each file item is styled through the **File item button** group in the style panel:
+
+| Property      | Type                    | Default   | Description                                                                  |
+| ------------- | ----------------------- | --------- | ---------------------------------------------------------------------------- |
+| Visibility    | `TextSelect` (bindable) | `always`  | `always` (always visible) or `hover` (revealed on file item hover or focus)  |
+| Remove icon   | `SystemIcon`            | `lucide/x`| Icon displayed inside the button                                             |
+| Button size   | `Length`                | `18px`    | Width and height of the button                                               |
+| Icon size (%) | `Number`                | `60`      | Icon size relative to the button                                             |
+| Icon color    | `Color`                 | `#ffffff` | Icon color                                                                   |
+| Icon background | `Color`               | `rgba(0, 0, 0, 0.45)` | Button background                                                |
+| Button radius | `Spacing`               | `50%`     | Button border radius                                                         |
+| Button border | `Border`                | `none`    | Button border                                                                |
+| Button shadow | `Shadows`               | `none`    | Button box-shadow                                                            |
+| Focus outline | `Border`                | `2px solid #007aff` | Outline shown on keyboard focus                                  |
+
+When Visibility is set to `hover`, the button stays reachable by keyboard (it appears on `:focus-visible`), and selecting the `file-items-icon-hover` state in the editor keeps it visible on the canvas so it can still be styled.
+
 ## Error Messages
 
 All error messages are customizable text properties with placeholder support:
@@ -127,6 +146,7 @@ When placed inside a WeWeb form container, the component supports `fieldName`, `
 
 ## Changelog
 
+8/21/2026 - 3.5.0: feat: add border, shadow and visibility (always / on hover) props for the file item remove button, and split style props into a dedicated "File item button" group
 5/31/2026 - 3.4.3: feat: add file-items-icon-hover state, remove removeIconColorHover and removeIconBackgroundHover props
 5/31/2026 - 3.4.2: feat: add border prop to file items
 5/31/2026 - 3.4.1: fix: change image position property to a select with CSS keyword values

@@ -62,17 +62,21 @@ export default {
             {
                 label: 'File items',
                 isCollapsible: true,
+                properties: ['fileItemsOpacity', 'itemsBorder', 'imageObjectFit', 'imageObjectPosition'],
+            },
+            {
+                label: 'File item button',
+                isCollapsible: true,
                 properties: [
-                    'fileItemsOpacity',
-                    'itemsBorder',
-                    'imageObjectFit',
-                    'imageObjectPosition',
+                    'removeIconVisibility',
                     'removeIcon',
                     'removeIconSize',
                     'removeIconInnerSize',
                     'removeIconColor',
                     'removeIconBackground',
                     'removeIconBorderRadius',
+                    'removeIconBorder',
+                    'removeIconShadow',
                     'removeIconFocusOutline',
                 ],
             },
@@ -731,6 +735,30 @@ export default {
             },
             /* wwEditor:end */
         },
+        removeIconVisibility: {
+            label: { en: 'Visibility' },
+            type: 'TextSelect',
+            section: 'style',
+            options: {
+                options: [
+                    { value: 'always', label: 'Always visible' },
+                    { value: 'hover', label: 'On hover' },
+                ],
+            },
+            defaultValue: 'always',
+            bindable: true,
+            responsive: true,
+            /* wwEditor:start */
+            bindingValidation: {
+                type: 'string',
+                tooltip: 'Valid values: always | hover',
+            },
+            propertyHelp: {
+                tooltip:
+                    'Controls when the remove button is displayed on a file item.\n\n<b>Always visible</b>: shown at all times.\n<b>On hover</b>: only shown when the file item is hovered or the button is focused via keyboard.',
+            },
+            /* wwEditor:end */
+        },
         removeIcon: {
             label: { en: 'Remove icon' },
             type: 'SystemIcon',
@@ -813,6 +841,39 @@ export default {
             responsive: true,
             states: true,
             classes: true,
+        },
+        removeIconBorder: {
+            type: 'Border',
+            label: { en: 'Button border' },
+            section: 'style',
+            bindable: true,
+            responsive: true,
+            states: true,
+            classes: true,
+            defaultValue: 'none',
+            /* wwEditor:start */
+            bindingValidation: {
+                type: 'string',
+                tooltip: 'CSS border shorthand. Examples: none | 1px solid #ffffff',
+            },
+            /* wwEditor:end */
+        },
+        removeIconShadow: {
+            type: 'Shadows',
+            label: { en: 'Button shadow' },
+            section: 'style',
+            options: { nullable: true },
+            bindable: true,
+            responsive: true,
+            states: true,
+            classes: true,
+            defaultValue: '',
+            /* wwEditor:start */
+            bindingValidation: {
+                type: 'string',
+                tooltip: 'CSS box-shadow value. Example: 0 1px 2px rgba(0, 0, 0, 0.25)',
+            },
+            /* wwEditor:end */
         },
         removeIconFocusOutline: {
             type: 'Border',
