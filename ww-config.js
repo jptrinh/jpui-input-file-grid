@@ -137,6 +137,14 @@ export default {
         { label: 'focus-visible', selectors: ['&:focus-visible', '&:has(:focus-visible)'] },
         // Hover is expressible in CSS, so it needs no component code at all. `:has()` keeps
         // the selector anchored on the root, which is what the compiler scopes its rules to.
+        //
+        // These two selectors are the only place the config depends on the component's
+        // internal class names: rename a class in wwElement.vue and the state silently stops
+        // matching. `npm run check` fails when that happens.
+        //
+        // Anchoring on the root is also why hovering one file item's remove button applies
+        // the state to every remove button at once — the compiler emits the state's custom
+        // properties on the root, and all the buttons inherit from it.
         { label: 'add-button-hover', selector: '&:has(.ww-file-upload__add:hover)' },
         { label: 'file-items-icon-hover', selector: '&:has(.ww-file-upload__item-remove:hover)' },
     ],

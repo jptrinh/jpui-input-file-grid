@@ -14,8 +14,22 @@ Then add `localhost:8080` as a custom element in the WeWeb editor developer popu
 ## Build
 
 ```bash
-npm run build --name="ww-input-file" --type="element"
+npx weweb build name=ww-input-file type=wwobject
 ```
+
+The CLI matches bare `name=` / `type=` arguments. Passing them as `--name=` (or through
+`npm run build --name=...`) prints `arg 'name="name"' not specified` **and still exits 0**,
+so a build that never ran can look like it succeeded.
+
+## Checks
+
+```bash
+npm run check
+```
+
+Verifies the contracts nothing else enforces: that every state selector in `ww-config.js`
+references a class name that still exists in `wwElement.vue`, and that `AI.json` mirrors
+the config's states and the package name.
 
 ## Features
 
