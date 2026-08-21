@@ -4,7 +4,7 @@
         "type": "git",
         "url": "https://github.com/jptrinh/jpui-input-file-2"
     },
-    "version": "4.2.0",
+    "version": "4.2.1",
     "scripts": {
         "build": "weweb build",
         "serve": "weweb serve",

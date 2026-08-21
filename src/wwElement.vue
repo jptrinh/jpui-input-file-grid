@@ -48,11 +48,12 @@
                 @dragend="handleItemDragEnd"
             >
                 <img
-                    v-if="isImageFile(file) && getFilePreview(file)"
+                    v-if="isImageFile(file) && getFilePreview(file) && !hasPreviewFailed(file)"
                     :src="getFilePreview(file)"
                     class="ww-file-upload__item-thumb"
                     :alt="file.name || 'File'"
                     draggable="false"
+                    @error="handlePreviewError(file)"
                 />
                 <div v-else class="ww-file-upload__item-placeholder">
                     <svg
@@ -264,11 +265,26 @@ export default {
         // Reordering needs a stable identity per file: index keys make Vue reuse the wrong
         // node when the list moves, and the status map needs something better than the file
         // name, which two uploads can share.
-        const withFileIdentity = (file, isNew) => ({
-            ...file,
-            id: file?.id || generateFileId(),
-            isNew,
-        });
+        // A bare URL string is a perfectly reasonable initial value, and spreading one would
+        // shred it into character-keyed properties, so normalise it to the object shape the
+        // rest of the component reads.
+        const fileNameFromUrl = url => {
+            try {
+                const path = String(url).split(/[?#]/)[0];
+                return decodeURIComponent(path.split('/').filter(Boolean).pop() || '');
+            } catch (e) {
+                return '';
+            }
+        };
+
+        const withFileIdentity = (file, isNew) => {
+            const source = typeof file === 'string' ? { url: file, name: fileNameFromUrl(file) } : file || {};
+            return {
+                ...source,
+                id: source.id || generateFileId(),
+                isNew,
+            };
+        };
 
         // The component's value is an object, so a form reset has to restore that whole
         // shape — handing the form the raw initialValue array would reset the field to
@@ -415,8 +431,23 @@ export default {
         const isImageFile = file => {
             const mimeType = file?.mimeType || file?.type || '';
             if (mimeType) return mimeType.startsWith('image/');
+
             const url = file?.url || file?.src || '';
-            return /\.(jpg|jpeg|png|gif|webp|svg|bmp|ico|avif|tiff?)(\?.*)?$/i.test(url);
+            if (!url && !file?.base64) return false;
+
+            const path = String(url).split(/[?#]/)[0];
+            if (/\.(jpg|jpeg|png|gif|webp|svg|bmp|ico|avif|tiff?)$/i.test(path)) return true;
+            // A different extension means it is something else. No extension at all says
+            // nothing either way — CDN transforms and signed links routinely have none — so
+            // try to render it and fall back to the placeholder if the load fails.
+            return !/\.[a-z0-9]{2,5}$/i.test(path);
+        };
+
+        // Ids of files whose preview failed to load, so an optimistic <img> can fall back.
+        const failedPreviews = reactive({});
+        const hasPreviewFailed = file => !!failedPreviews[file?.id];
+        const handlePreviewError = file => {
+            if (file?.id) failedPreviews[file.id] = true;
         };
 
         watch(
@@ -938,6 +969,8 @@ export default {
             computedRemoveIconInnerSize,
             isImageFile,
             getFilePreview,
+            hasPreviewFailed,
+            handlePreviewError,
             truncateFileName,
             openFileExplorer,
             handleDragEnter,

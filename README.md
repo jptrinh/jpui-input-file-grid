@@ -57,21 +57,21 @@ Optionally expose uploaded files as **Base64** or **Binary** data via toggle set
 
 ## Properties
 
-| Property            | Type               | Default | Description                                                                      |
-| ------------------- | ------------------ | ------- | -------------------------------------------------------------------------------- |
-| Initial value       | `Array` (bindable) | `[]`    | Array of existing items to initialize with. Tracked separately from new uploads. |
-| Allow drag & drop   | `OnOff`            | `true`  | Enable/disable drag and drop                                                     |
-| Allow reorder       | `OnOff`            | `false` | Let users reorder files by drag or ctrl/cmd + arrow keys                         |
-| Max file size (MB)  | `Number`           | `10`    | Maximum size per file                                                            |
-| Min file size (MB)  | `Number`           | `0`     | Minimum size per file                                                            |
-| Max total size (MB) | `Number`           | `50`    | Maximum combined size across all files                                           |
-| Max number of files | `Number`           | `10`    | File count limit. Set to 1 for single-file behaviour                             |
-| Required            | `OnOff`            | `false` | Mark as required                                                                 |
-| Read only           | `OnOff`            | `false` | Prevent uploads                                                                  |
-| Allowed file types  | `TextSelect`       | `any`   | Filter by type: any, image, video, audio, pdf, csv, excel, word, json, custom    |
-| Custom extensions   | `Text`             | `""`    | Comma-separated extensions when type is `custom` (e.g. `.html, .xml`)            |
-| Expose as Base64    | `OnOff`            | `false` | Include base64 string on each file                                               |
-| Expose as Binary    | `OnOff`            | `false` | Include binary data on each file                                                 |
+| Property            | Type               | Default | Description                                                                   |
+| ------------------- | ------------------ | ------- | ----------------------------------------------------------------------------- |
+| Initial value       | `Array` (bindable) | `[]`    | Existing items: objects with a `url`/`src`, or bare URL strings               |
+| Allow drag & drop   | `OnOff`            | `true`  | Enable/disable drag and drop                                                  |
+| Allow reorder       | `OnOff`            | `false` | Let users reorder files by drag or ctrl/cmd + arrow keys                      |
+| Max file size (MB)  | `Number`           | `10`    | Maximum size per file                                                         |
+| Min file size (MB)  | `Number`           | `0`     | Minimum size per file                                                         |
+| Max total size (MB) | `Number`           | `50`    | Maximum combined size across all files                                        |
+| Max number of files | `Number`           | `10`    | File count limit. Set to 1 for single-file behaviour                          |
+| Required            | `OnOff`            | `false` | Mark as required                                                              |
+| Read only           | `OnOff`            | `false` | Prevent uploads                                                               |
+| Allowed file types  | `TextSelect`       | `any`   | Filter by type: any, image, video, audio, pdf, csv, excel, word, json, custom |
+| Custom extensions   | `Text`             | `""`    | Comma-separated extensions when type is `custom` (e.g. `.html, .xml`)         |
+| Expose as Base64    | `OnOff`            | `false` | Include base64 string on each file                                            |
+| Expose as Binary    | `OnOff`            | `false` | Include binary data on each file                                              |
 
 ## File Item Button
 
@@ -184,6 +184,7 @@ When placed inside a WeWeb form container, the component supports `fieldName`, `
 
 ## Changelog
 
+8/21/2026 - 4.2.1: fix: accept bare URL strings in the initial value, and preview images whose URL has no file extension
 8/21/2026 - 4.2.0: feat: add a Reorder line style property for the insertion indicator colour
 8/21/2026 - 4.1.3: fix: dropping a reordered file on the insertion line cancelled the drop, because the gap between two items belongs to no item
 8/21/2026 - 4.1.2: feat: show an insertion line in the gap the dragged file will drop into, instead of outlining the file it would displace
