@@ -1,4 +1,4 @@
-# File Upload
+# JPUI Input File Grid
 
 A WeWeb custom file upload component with drag & drop, validation, and customizable dropzone via `wwLayout`.
 
@@ -14,7 +14,7 @@ Then add `localhost:8080` as a custom element in the WeWeb editor developer popu
 ## Build
 
 ```bash
-npx weweb build name=ww-input-file type=wwobject
+npx weweb build name=jpui-input-file-grid type=wwobject
 ```
 
 The CLI matches bare `name=` / `type=` arguments. Passing them as `--name=` (or through
@@ -171,6 +171,7 @@ When placed inside a WeWeb form container, the component supports `fieldName`, `
 
 ## Changelog
 
+8/21/2026 - 4.0.0: chore: rename the component to jpui-input-file-grid and point the repository at this fork
 8/21/2026 - 3.7.0: feat: add error, focus and focus-visible states, and drop the two unused root modifier classes
 8/21/2026 - 3.6.3: fix: mark the add button inert when disabled, remove the hidden file input from the tab order and the accessibility tree, and replace deprecated substr
 8/21/2026 - 3.6.2: fix: give the form an initialValue so resetting a form restores the field, and declare the sidepanel-content event the editor helper emits

@@ -1,10 +1,10 @@
 {
-    "name": "ww-input-file",
+    "name": "jpui-input-file-grid",
     "repository": {
         "type": "git",
-        "url": "https://github.com/weweb-assets/ww-input-file"
+        "url": "https://github.com/jptrinh/jpui-input-file-2"
     },
-    "version": "3.7.0",
+    "version": "4.0.0",
     "scripts": {
         "build": "weweb build",
         "serve": "weweb serve",

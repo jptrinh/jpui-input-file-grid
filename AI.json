@@ -1,8 +1,15 @@
 {
     "metadata": {
-        "name": "ww-input-file",
+        "name": "jpui-input-file-grid",
         "description": "A file upload input displaying uploaded files as a grid of thumbnails with an add button, drag & drop support, size/count/type validation, and optional Base64 or Binary encoding.",
-        "keywords": ["file upload", "file input", "upload", "drag and drop", "image upload", "attachment"],
+        "keywords": [
+            "file upload",
+            "file input",
+            "upload",
+            "drag and drop",
+            "image upload",
+            "attachment"
+        ],
         "features": [
             "Grid of file items with image thumbnails and a fallback file icon + name for non-image files",
             "Add button with configurable icon, label and styling",
@@ -81,7 +88,18 @@
             "name": "extensions",
             "description": "Filter accepted files by type",
             "type": "string",
-            "options": ["any", "image", "video", "audio", "pdf", "csv", "excel", "word", "json", "custom"],
+            "options": [
+                "any",
+                "image",
+                "video",
+                "audio",
+                "pdf",
+                "csv",
+                "excel",
+                "word",
+                "json",
+                "custom"
+            ],
             "defaultValue": "any"
         },
         {
@@ -234,7 +252,13 @@
             "name": "addLabelFontWeight",
             "description": "Font weight of the add button label",
             "type": "string",
-            "options": ["300", "400", "500", "600", "700"],
+            "options": [
+                "300",
+                "400",
+                "500",
+                "600",
+                "700"
+            ],
             "defaultValue": "400",
             "responsive": true
         },
@@ -270,7 +294,13 @@
             "name": "imageObjectFit",
             "description": "CSS object-fit of image thumbnails",
             "type": "string",
-            "options": ["cover", "contain", "fill", "none", "scale-down"],
+            "options": [
+                "cover",
+                "contain",
+                "fill",
+                "none",
+                "scale-down"
+            ],
             "defaultValue": "cover",
             "responsive": true
         },
@@ -296,7 +326,10 @@
             "name": "removeIconVisibility",
             "description": "When the remove button is displayed on a file item: 'always' shows it at all times, 'hover' only reveals it when the file item is hovered or the button has keyboard focus.",
             "type": "string",
-            "options": ["always", "hover"],
+            "options": [
+                "always",
+                "hover"
+            ],
             "defaultValue": "always",
             "responsive": true
         },
