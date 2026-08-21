@@ -88,6 +88,12 @@ The remove button on each file item is styled through the **File item button** g
 
 When Visibility is set to `hover`, the button stays reachable by keyboard (it appears on `:focus-visible`), and selecting the `file-items-icon-hover` state in the editor keeps it visible on the canvas so it can still be styled.
 
+**The `file-items-icon-hover` state applies to every file item at once.** WeWeb scopes a
+state's generated CSS to the component's root element, and all the remove buttons inherit
+from that one root — so hovering a single button restyles all of them. This is a property
+of element-level states, not something the component can work around: per-item hover would
+require each file item to be its own WeWeb element.
+
 ## Error Messages
 
 All error messages are customizable text properties with placeholder support:
