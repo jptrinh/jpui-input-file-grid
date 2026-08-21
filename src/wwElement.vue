@@ -3,6 +3,7 @@
         class="ww-file-upload"
         :class="{
             'ww-file-upload--disabled': isDisabled,
+            'ww-file-upload--interaction-blocked': isInteractionBlocked,
             'ww-file-upload--readonly': isReadonly,
             'ww-file-upload--dragging': isDragging,
         }"
@@ -131,6 +132,11 @@ export default {
         const exposeBinary = computed(() => props.content?.exposeBinary || false);
         const addCursorStyle = computed(() => (isEditing.value ? 'default' : 'pointer'));
 
+        // `pointer-events: none` also removes the root from hit-testing, which swallows the
+        // editor's selection click and makes the element unselectable on the canvas. Every
+        // handler already guards on isDisabled, so while editing the cursor hint is enough.
+        const isInteractionBlocked = computed(() => isDisabled.value && !isEditing.value);
+
         // Style computeds
         const rowDisplay = computed(() => (props.content?.gridColumns > 0 ? 'grid' : 'flex'));
         const gridTemplateColumns = computed(() =>
@@ -171,22 +177,20 @@ export default {
         const isDisabled = computed(() => {
             /* wwEditor:start */
             if (props.wwEditorState?.isSelected) {
-                return props.wwElementState.states.includes('disabled');
+                return props.wwElementState?.states?.includes('disabled') ?? false;
             }
             /* wwEditor:end */
-            return props.wwElementState.props.disabled === undefined
-                ? props.content?.disabled || false
-                : props.wwElementState.props.disabled;
+            const stateProp = props.wwElementState?.props?.disabled;
+            return stateProp === undefined ? props.content?.disabled || false : stateProp;
         });
         const isReadonly = computed(() => {
             /* wwEditor:start */
             if (props.wwEditorState?.isSelected) {
-                return props.wwElementState.states.includes('readonly');
+                return props.wwElementState?.states?.includes('readonly') ?? false;
             }
             /* wwEditor:end */
-            return props.wwElementState.props.readonly === undefined
-                ? props.content?.readonly || false
-                : props.wwElementState.props.readonly;
+            const stateProp = props.wwElementState?.props?.readonly;
+            return stateProp === undefined ? props.content?.readonly || false : stateProp;
         });
 
         const { value: componentData, setValue: setComponentData } = wwLib.wwVariable.useComponentVariable({
@@ -438,7 +442,16 @@ export default {
 
         // The `dragging` state is applicative: it is exposed as an attribute the state
         // selector matches, and stays off while the component cannot accept a drop.
-        const isDraggingState = computed(() => isDragging.value && !isDisabled.value && !isReadonly.value);
+        const isDraggingState = computed(() => {
+            /* wwEditor:start */
+            // Dropping is blocked while editing, so a real drag can never raise this state
+            // on the canvas — honour the state picker instead, or it could never be styled.
+            if (props.wwEditorState?.isSelected) {
+                return props.wwElementState?.states?.includes('dragging') ?? false;
+            }
+            /* wwEditor:end */
+            return isDragging.value && !isDisabled.value && !isReadonly.value;
+        });
 
         const handleDragOver = event => {
             if (isDisabled.value || isReadonly.value || !drop.value || isEditing.value) return;
@@ -663,6 +676,7 @@ export default {
             hasFiles,
             isDragging,
             isDraggingState,
+            isInteractionBlocked,
             showAddButton,
             isDisabled,
             isReadonly,
@@ -890,6 +904,10 @@ export default {
     }
 
     &--disabled {
+        cursor: not-allowed;
+    }
+
+    &--interaction-blocked {
         pointer-events: none;
     }
 }

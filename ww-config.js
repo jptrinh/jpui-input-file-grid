@@ -195,7 +195,8 @@ export default {
             section: 'style',
             defaultValue: 'lucide/upload',
             bindable: true,
-            states: true,
+            // No `states`: the icon name is resolved in JS by getIcon(), not by the style
+            // compiler, so a per-state value could never be applied.
             /* wwEditor:start */
             bindingValidation: {
                 type: 'string',
@@ -802,7 +803,7 @@ export default {
             section: 'style',
             defaultValue: 'lucide/x',
             bindable: true,
-            states: true,
+            // No `states`: see addIcon.
             /* wwEditor:start */
             bindingValidation: {
                 type: 'string',
