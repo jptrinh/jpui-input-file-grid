@@ -4,12 +4,11 @@
         :class="{
             'ww-file-upload--disabled': isDisabled,
             'ww-file-upload--interaction-blocked': isInteractionBlocked,
-            'ww-file-upload--readonly': isReadonly,
-            'ww-file-upload--dragging': isDragging,
         }"
         :data-ww-dragging="isDraggingState ? 'true' : null"
         :data-ww-disabled="isDisabled ? 'true' : null"
         :data-ww-readonly="isReadonly ? 'true' : null"
+        :data-ww-error="hasError ? 'true' : null"
         @dragover.prevent="handleDragOver"
         @dragleave.prevent="handleDragLeave"
         @drop.prevent="handleDrop"
@@ -253,6 +252,17 @@ export default {
         });
 
         const lastError = ref(null);
+
+        // The `error` state is applicative. An error cannot realistically be provoked on the
+        // canvas, so honour the state picker there the way dragging does.
+        const hasError = computed(() => {
+            /* wwEditor:start */
+            if (props.wwEditorState?.isSelected) {
+                return props.wwElementState?.states?.includes('error') ?? false;
+            }
+            /* wwEditor:end */
+            return lastError.value !== null;
+        });
 
         const { getIcon } = wwLib.useIcons();
         const removeIconSvgText = ref(null);
@@ -690,8 +700,8 @@ export default {
             fileInput,
             fileList,
             hasFiles,
-            isDragging,
             isDraggingState,
+            hasError,
             isInteractionBlocked,
             showAddButton,
             isDisabled,

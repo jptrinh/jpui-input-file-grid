@@ -132,13 +132,18 @@ Accessible via `context.local.data?.['fileUpload']` in the formula editor:
 
 ## States
 
-| State                   | Description                                            |
-| ----------------------- | ------------------------------------------------------ |
-| `dragging`              | Active when a file is being dragged over the component |
-| `add-button-hover`      | Active when the add button is hovered                  |
-| `file-items-icon-hover` | Active when the remove icon on a file item is hovered  |
-| `disabled`              | Component is disabled                                  |
-| `readonly`              | Component is in read-only mode                         |
+All states are selector-based, so WeWeb applies them from the DOM — the component emits no `add-state` / `remove-state`.
+
+| State                   | Description                                                    | Matched by                     |
+| ----------------------- | -------------------------------------------------------------- | ------------------------------ |
+| `dragging`              | A file is being dragged over the component                     | `data-ww-dragging` attribute   |
+| `disabled`              | Component is disabled                                          | `data-ww-disabled` attribute   |
+| `readonly`              | Component is in read-only mode                                 | `data-ww-readonly` attribute   |
+| `error`                 | The last upload attempt failed validation                      | `data-ww-error` attribute      |
+| `focus`                 | A control inside the component has focus                       | `:focus-within`                |
+| `focus-visible`         | A control inside the component has keyboard focus              | `:focus-visible`               |
+| `add-button-hover`      | The add button is hovered                                      | `:has(.…__add:hover)`          |
+| `file-items-icon-hover` | A file item remove button is hovered (applies to all at once)  | `:has(.…__item-remove:hover)`  |
 
 ## Form Integration
 
@@ -146,6 +151,7 @@ When placed inside a WeWeb form container, the component supports `fieldName`, `
 
 ## Changelog
 
+8/21/2026 - 3.7.0: feat: add error, focus and focus-visible states, and drop the two unused root modifier classes
 8/21/2026 - 3.6.3: fix: mark the add button inert when disabled, remove the hidden file input from the tab order and the accessibility tree, and replace deprecated substr
 8/21/2026 - 3.6.2: fix: give the form an initialValue so resetting a form restores the field, and declare the sidepanel-content event the editor helper emits
 8/21/2026 - 3.6.1: fix: keep the root hit-testable while editing so the element stays selectable on the canvas when disabled, let the dragging state preview from the state picker, guard wwElementState access, and stop offering per-state values on the icon properties

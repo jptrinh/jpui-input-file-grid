@@ -130,6 +130,11 @@ export default {
         { label: 'dragging', selector: '&[data-ww-dragging="true"]' },
         { label: 'disabled', selector: '&[data-ww-disabled="true"]' },
         { label: 'readonly', selector: '&[data-ww-readonly="true"]' },
+        { label: 'error', selector: '&[data-ww-error="true"]' },
+        // Focus always lands on a child (the add button or a remove button), never on the
+        // root, so both states have to look inside as well as at the root itself.
+        { label: 'focus', selector: '&:focus-within' },
+        { label: 'focus-visible', selectors: ['&:focus-visible', '&:has(:focus-visible)'] },
         // Hover is expressible in CSS, so it needs no component code at all. `:has()` keeps
         // the selector anchored on the root, which is what the compiler scopes its rules to.
         { label: 'add-button-hover', selector: '&:has(.ww-file-upload__add:hover)' },

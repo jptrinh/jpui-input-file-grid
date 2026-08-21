@@ -396,20 +396,32 @@
             "description": "A file is being dragged over the component"
         },
         {
-            "name": "add-button-hover",
-            "description": "The add button is hovered"
-        },
-        {
-            "name": "file-items-icon-hover",
-            "description": "The remove button of a file item is hovered. Also keeps the remove button visible on the canvas when removeIconVisibility is 'hover'."
-        },
-        {
             "name": "disabled",
             "description": "The component is disabled"
         },
         {
             "name": "readonly",
             "description": "The component is read-only"
+        },
+        {
+            "name": "error",
+            "description": "The last upload attempt failed validation. Cleared by the Clear Error action and by the next upload attempt."
+        },
+        {
+            "name": "focus",
+            "description": "Any control inside the component has focus (:focus-within)"
+        },
+        {
+            "name": "focus-visible",
+            "description": "Any control inside the component has keyboard focus (:focus-visible)"
+        },
+        {
+            "name": "add-button-hover",
+            "description": "The add button is hovered"
+        },
+        {
+            "name": "file-items-icon-hover",
+            "description": "The remove button of a file item is hovered. Applies to every file item at once, and also keeps the remove button visible on the canvas when removeIconVisibility is 'hover'."
         }
     ],
     "events": [
@@ -478,7 +490,8 @@
         "Set removeIconVisibility to 'hover' for a cleaner grid; the button stays keyboard-accessible because it also appears on :focus-visible.",
         "To style the remove button on canvas while removeIconVisibility is 'hover', select the file-items-icon-hover state.",
         "Enable exposeBase64 or exposeBinary only when the workflow needs the file payload, since both add significant weight to the variable.",
-        "Inside a form container, set fieldName so the file data is included in the form submission."
+        "Inside a form container, set fieldName so the file data is included in the form submission.",
+        "States are selector-based: dragging, disabled, readonly and error are exposed as data attributes on the root, the focus states use :focus-within / :focus-visible, and the two hover states use :has(...:hover). The component emits no add-state/remove-state."
     ],
     "examples": []
 }
