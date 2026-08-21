@@ -43,6 +43,10 @@ With **Allow reorder** on, files can be reordered by dragging them, or with ctrl
 arrow keys when a file is focused. Reordering spans the whole list: a newly uploaded file
 can be moved in front of one that came from the initial value.
 
+While dragging, a line is drawn in the gap the file will be inserted into — which side of
+the hovered file it lands on follows the pointer. The line is drawn in `currentColor`, so
+it inherits the component's text colour.
+
 ### Validation
 
 Built-in validation for file size (min/max), total size, file count, and file type. Accepted types include image, video, audio, PDF, CSV, Excel, Word, JSON, or custom extensions.
@@ -180,6 +184,7 @@ When placed inside a WeWeb form container, the component supports `fieldName`, `
 
 ## Changelog
 
+8/21/2026 - 4.1.2: feat: show an insertion line in the gap the dragged file will drop into, instead of outlining the file it would displace
 8/21/2026 - 4.1.1: fix: declare the reorder drag refs (ReferenceError on load) and return maxFiles to the template, which made the file picker always accept multiple files
 8/21/2026 - 4.1.0: feat: reorder files by drag or keyboard across existing and new files; allFiles becomes the authoritative ordered list with stable per-file ids
 8/21/2026 - 4.0.0: chore: rename the component to jpui-input-file-grid and point the repository at this fork

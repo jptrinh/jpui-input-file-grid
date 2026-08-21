@@ -37,8 +37,6 @@
                 :class="{
                     'ww-file-upload__item--reorderable': canReorder,
                     'ww-file-upload__item--dragged': draggedIndex === index,
-                    'ww-file-upload__item--drag-over':
-                        draggedIndex !== null && dragOverIndex === index && draggedIndex !== index,
                 }"
                 :draggable="canReorder"
                 :tabindex="canReorder ? 0 : null"
@@ -100,6 +98,8 @@
                     addLabelText
                 }}</span>
             </div>
+
+            <div v-if="insertionStyle" class="ww-file-upload__insertion" :style="insertionStyle" aria-hidden="true" />
         </div>
     </div>
 </template>
@@ -147,10 +147,12 @@ export default {
 
         const fileInput = ref(null);
         const isDragging = ref(false);
-        // Index of the item being dragged for reorder, and the item it is currently over.
-        // null means no reorder drag is in flight.
+        // Index of the item being dragged for reorder. null means no reorder drag is in flight.
         const draggedIndex = ref(null);
-        const dragOverIndex = ref(null);
+        // The gap the file would be inserted into, numbered 0..n: gap g sits before item g,
+        // and gap n is after the last item. Plus the measured geometry of the line drawn there.
+        const dropGapIndex = ref(null);
+        const insertionLine = ref(null);
 
         const drop = computed(() => props.content?.drop !== false);
         const maxFileSize = computed(() => props.content?.maxFileSize || 10);
@@ -467,6 +469,16 @@ export default {
             return previewCache[file?.id] || null;
         };
 
+        const insertionStyle = computed(() =>
+            insertionLine.value
+                ? {
+                      left: `${insertionLine.value.left}px`,
+                      top: `${insertionLine.value.top}px`,
+                      height: `${insertionLine.value.height}px`,
+                  }
+                : null
+        );
+
         const fileItemLabel = (file, index) => {
             const name = file?.name || 'File';
             if (!canReorder.value) return name;
@@ -767,7 +779,7 @@ export default {
         const handleItemDragStart = (event, index) => {
             if (!canReorder.value) return;
             draggedIndex.value = index;
-            dragOverIndex.value = index;
+            dropGapIndex.value = index;
             if (event.dataTransfer) {
                 event.dataTransfer.effectAllowed = 'move';
                 // Firefox will not start a drag unless some data is attached.
@@ -784,17 +796,37 @@ export default {
             event.preventDefault();
             event.stopPropagation();
             if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
-            dragOverIndex.value = index;
+
+            const item = event.currentTarget;
+            const rect = item.getBoundingClientRect();
+            // Past the midpoint means the file lands after this one, so the line moves to the
+            // far edge. Everything is measured live, which keeps it correct when the grid wraps.
+            const after = event.clientX > rect.left + rect.width / 2;
+            dropGapIndex.value = after ? index + 1 : index;
+
+            const row = item.parentElement;
+            const columnGap = row ? parseFloat(wwLib.getFrontWindow().getComputedStyle(row).columnGap) : 0;
+            const offset = (Number.isFinite(columnGap) ? columnGap : 0) / 2;
+            insertionLine.value = {
+                left: after ? item.offsetLeft + item.offsetWidth + offset : item.offsetLeft - offset,
+                top: item.offsetTop,
+                height: item.offsetHeight,
+            };
         };
 
         const handleItemDrop = (event, index) => {
             if (draggedIndex.value === null) return;
             event.preventDefault();
             event.stopPropagation();
+
             const from = draggedIndex.value;
-            draggedIndex.value = null;
-            dragOverIndex.value = null;
-            reorderFiles(from, index);
+            const gap = dropGapIndex.value ?? index;
+            clearReorderDrag();
+
+            // reorderFiles inserts into the list *after* the source has been removed, so a gap
+            // beyond the source shifts down by one. Dropping into either gap next to the file
+            // itself resolves to its current index, which reorderFiles treats as a no-op.
+            reorderFiles(from, gap > from ? gap - 1 : gap);
         };
 
         // Drag-only reordering is unusable without a pointer. ctrl/cmd + arrow moves the
@@ -816,10 +848,13 @@ export default {
             reorderFiles(index, target);
         };
 
-        const handleItemDragEnd = () => {
+        const clearReorderDrag = () => {
             draggedIndex.value = null;
-            dragOverIndex.value = null;
+            dropGapIndex.value = null;
+            insertionLine.value = null;
         };
+
+        const handleItemDragEnd = clearReorderDrag;
 
         const clearFiles = () => {
             const newData = buildValue([], [...deletedFiles.value, ...existingFiles.value]);
@@ -897,7 +932,7 @@ export default {
             reorderFiles,
             canReorder,
             draggedIndex,
-            dragOverIndex,
+            insertionStyle,
             handleItemDragStart,
             handleItemDragOver,
             handleItemDrop,
@@ -937,6 +972,7 @@ export default {
     }
 
     &__row {
+        position: relative;
         display: v-bind(rowDisplay);
         flex-direction: row;
         flex-wrap: wrap;
@@ -977,9 +1013,15 @@ export default {
         opacity: 0.4;
     }
 
-    &__item--drag-over {
-        outline: 2px dashed currentColor;
-        outline-offset: -2px;
+    &__insertion {
+        position: absolute;
+        width: 2px;
+        border-radius: 1px;
+        background: currentColor;
+        // The line sits over the gap between two items and must never take the drag events
+        // that are keeping it positioned.
+        pointer-events: none;
+        transform: translateX(-50%);
     }
 
     &__item-thumb {
