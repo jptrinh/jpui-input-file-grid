@@ -44,8 +44,8 @@ arrow keys when a file is focused. Reordering spans the whole list: a newly uplo
 can be moved in front of one that came from the initial value.
 
 While dragging, a line is drawn in the gap the file will be inserted into — which side of
-the hovered file it lands on follows the pointer. The line is drawn in `currentColor`, so
-it inherits the component's text colour.
+the hovered file it lands on follows the pointer. Its colour is set by **Reorder line** in
+the _File items_ style group, which only appears when Allow reorder is on.
 
 ### Validation
 
@@ -184,6 +184,7 @@ When placed inside a WeWeb form container, the component supports `fieldName`, `
 
 ## Changelog
 
+8/21/2026 - 4.2.0: feat: add a Reorder line style property for the insertion indicator colour
 8/21/2026 - 4.1.3: fix: dropping a reordered file on the insertion line cancelled the drop, because the gap between two items belongs to no item
 8/21/2026 - 4.1.2: feat: show an insertion line in the gap the dragged file will drop into, instead of outlining the file it would displace
 8/21/2026 - 4.1.1: fix: declare the reorder drag refs (ReferenceError on load) and return maxFiles to the template, which made the file picker always accept multiple files

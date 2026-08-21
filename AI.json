@@ -300,6 +300,16 @@
             "responsive": true
         },
         {
+            "name": "reorderLineColor",
+            "description": "Colour of the line showing where a dragged file will be inserted. Inactive when allowReorder is false.",
+            "type": "string",
+            "defaultValue": "#007aff",
+            "responsive": true,
+            "inactiveProperty": {
+                "description": "Inactive when allowReorder is false."
+            }
+        },
+        {
             "name": "removeIconVisibility",
             "description": "When the remove button is displayed on a file item: 'always' shows it at all times, 'hover' only reveals it when the file item is hovered or the button has keyboard focus.",
             "type": "string",

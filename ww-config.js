@@ -63,7 +63,13 @@ export default {
             {
                 label: 'File items',
                 isCollapsible: true,
-                properties: ['fileItemsOpacity', 'itemsBorder', 'imageObjectFit', 'imageObjectPosition'],
+                properties: [
+                    'fileItemsOpacity',
+                    'itemsBorder',
+                    'imageObjectFit',
+                    'imageObjectPosition',
+                    'reorderLineColor',
+                ],
             },
             {
                 label: 'File item button',
@@ -115,6 +121,7 @@ export default {
             { property: '--ww-fu-item-opacity', value: content?.fileItemsOpacity },
             { property: '--ww-fu-item-border', value: content?.itemsBorder },
             { property: '--ww-fu-item-radius', value: content?.itemsBorderRadius },
+            { property: '--ww-fu-reorder-line', value: content?.reorderLineColor },
             // File item button
             { property: '--ww-fu-remove-size', value: content?.removeIconSize },
             { property: '--ww-fu-remove-color', value: content?.removeIconColor },
@@ -814,6 +821,27 @@ export default {
             bindingValidation: {
                 type: 'number',
                 tooltip: 'Opacity of the file items, between 0 and 1.',
+            },
+            /* wwEditor:end */
+        },
+        reorderLineColor: {
+            label: { en: 'Reorder line' },
+            type: 'Color',
+            section: 'style',
+            defaultValue: '#007aff',
+            bindable: true,
+            responsive: true,
+            states: true,
+            classes: true,
+            hidden: content => !content?.allowReorder,
+            /* wwEditor:start */
+            bindingValidation: {
+                type: 'string',
+                tooltip: 'A CSS color. Example: `#007aff`',
+            },
+            propertyHelp: {
+                tooltip:
+                    'Colour of the line showing where a dragged file will be inserted.\n\nOnly used when Allow reorder is on.',
             },
             /* wwEditor:end */
         },

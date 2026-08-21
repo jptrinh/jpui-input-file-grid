@@ -1043,7 +1043,7 @@ export default {
         position: absolute;
         width: 2px;
         border-radius: 1px;
-        background: currentColor;
+        background: var(--ww-fu-reorder-line, currentColor);
         // The line sits over the gap between two items and must never take the drag events
         // that are keeping it positioned.
         pointer-events: none;
