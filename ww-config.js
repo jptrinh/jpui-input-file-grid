@@ -330,10 +330,12 @@ export default {
             /* wwEditor:start */
             bindingValidation: {
                 type: 'array',
-                tooltip: 'Array of existing items to initialize the component with',
+                tooltip:
+                    'An array of files already stored for this record.\n\nEach item is either a <b>URL string</b>, or an <b>object</b> with a <code>url</code> (or <code>src</code>) to preview, plus optional <code>name</code>, <code>mimeType</code> and <code>id</code>.\n\nEx:\n<code>["https://cdn.example.com/photo.jpg", {"url": "https://…/contract.pdf", "name": "Contract.pdf"}]</code>',
             },
             propertyHelp: {
-                tooltip: 'Bind an array of existing items. These will be tracked separately from new uploads.',
+                tooltip:
+                    "Files already stored for this record. Accepts a <b>URL string</b> or an <b>object</b> per item.\n\nObject keys:\n• <code>url</code> or <code>src</code> — used for the thumbnail (required to preview)\n• <code>name</code> — shown under non-image files\n• <code>mimeType</code> or <code>type</code> — decides image vs file icon; without it the extension is used, and a URL with no extension is previewed optimistically\n• <code>id</code> — kept as the file's identity, otherwise one is generated\n\nThese are exposed as <code>existingFiles</code> and are never re-uploaded. Removing one moves it to <code>deletedFiles</code> so your backend can delete it.\n\n<b>Changing this value resets the component</b>, discarding any files the user has uploaded but not yet submitted.",
             },
             /* wwEditor:end */
         },

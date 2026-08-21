@@ -184,6 +184,7 @@ When placed inside a WeWeb form container, the component supports `fieldName`, `
 
 ## Changelog
 
+8/21/2026 - 4.2.2: docs: spell out the expected initial value shape in the editor tooltips
 8/21/2026 - 4.2.1: fix: accept bare URL strings in the initial value, and preview images whose URL has no file extension
 8/21/2026 - 4.2.0: feat: add a Reorder line style property for the insertion indicator colour
 8/21/2026 - 4.1.3: fix: dropping a reordered file on the insertion line cancelled the drop, because the gap between two items belongs to no item
