@@ -147,6 +147,10 @@ export default {
 
         const fileInput = ref(null);
         const isDragging = ref(false);
+        // Index of the item being dragged for reorder, and the item it is currently over.
+        // null means no reorder drag is in flight.
+        const draggedIndex = ref(null);
+        const dragOverIndex = ref(null);
 
         const drop = computed(() => props.content?.drop !== false);
         const maxFileSize = computed(() => props.content?.maxFileSize || 10);
@@ -862,6 +866,7 @@ export default {
             isDisabled,
             isReadonly,
             acceptedFileTypes,
+            maxFiles,
             addCursorStyle,
             rowDisplay,
             gridTemplateColumns,

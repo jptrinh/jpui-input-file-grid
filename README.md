@@ -180,6 +180,7 @@ When placed inside a WeWeb form container, the component supports `fieldName`, `
 
 ## Changelog
 
+8/21/2026 - 4.1.1: fix: declare the reorder drag refs (ReferenceError on load) and return maxFiles to the template, which made the file picker always accept multiple files
 8/21/2026 - 4.1.0: feat: reorder files by drag or keyboard across existing and new files; allFiles becomes the authoritative ordered list with stable per-file ids
 8/21/2026 - 4.0.0: chore: rename the component to jpui-input-file-grid and point the repository at this fork
 8/21/2026 - 3.7.0: feat: add error, focus and focus-visible states, and drop the two unused root modifier classes
