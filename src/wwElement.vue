@@ -9,8 +9,9 @@
         :data-ww-disabled="isDisabled ? 'true' : null"
         :data-ww-readonly="isReadonly ? 'true' : null"
         :data-ww-error="hasError ? 'true' : null"
-        @dragover.prevent="handleDragOver"
-        @dragleave.prevent="handleDragLeave"
+        @dragenter="handleDragEnter"
+        @dragover="handleDragOver"
+        @dragleave="handleDragLeave"
         @drop.prevent="handleDrop"
         role="region"
         aria-label="File upload area"
@@ -214,31 +215,56 @@ export default {
             componentType: 'element',
         });
 
-        const existingFiles = computed(() => componentData.value?.existingFiles || []);
-        const newFiles = computed(() => componentData.value?.newFiles || []);
+        // `allFiles` is the authoritative, ordered list. `existingFiles` and `newFiles` are
+        // views over it, so `isNew` is pure provenance (came from initialValue vs uploaded
+        // now) rather than doubling as position — which is what lets a file be reordered
+        // across the boundary without changing what it is.
+        const allFiles = computed(() => componentData.value?.allFiles || []);
+        const existingFiles = computed(() => allFiles.value.filter(file => !file?.isNew));
+        const newFiles = computed(() => allFiles.value.filter(file => file?.isNew));
         const deletedFiles = computed(() => componentData.value?.deletedFiles || []);
         const lastInitialValue = ref(null);
+
+        const buildValue = (files, deleted) => ({
+            allFiles: files,
+            existingFiles: files.filter(file => !file?.isNew),
+            newFiles: files.filter(file => file?.isNew),
+            deletedFiles: deleted,
+        });
+
+        let fileIdCounter = 0;
+        const generateFileId = () =>
+            `file-${Date.now()}-${(fileIdCounter++).toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
+        // Reordering needs a stable identity per file: index keys make Vue reuse the wrong
+        // node when the list moves, and the status map needs something better than the file
+        // name, which two uploads can share.
+        const withFileIdentity = (file, isNew) => ({
+            ...file,
+            id: file?.id || generateFileId(),
+            isNew,
+        });
 
         // The component's value is an object, so a form reset has to restore that whole
         // shape — handing the form the raw initialValue array would reset the field to
         // something no consumer of the variable can read.
         const initialValue = computed(() => {
             const initialArray = Array.isArray(props.content?.initialValue) ? props.content.initialValue : [];
-            return {
-                existingFiles: initialArray,
-                newFiles: [],
-                deletedFiles: [],
-                allFiles: initialArray,
-            };
+            return buildValue(
+                initialArray.map(file => withFileIdentity(file, false)),
+                []
+            );
         });
 
         watch(
-            initialValue,
+            () => props.content?.initialValue,
             newInitialValue => {
-                const serialized = JSON.stringify(newInitialValue.existingFiles);
+                // Compare the raw prop, not the normalised value: the generated ids differ on
+                // every evaluation and would make every content change look like a new list.
+                const serialized = JSON.stringify(Array.isArray(newInitialValue) ? newInitialValue : []);
                 if (serialized !== lastInitialValue.value) {
                     lastInitialValue.value = serialized;
-                    setComponentData(newInitialValue);
+                    setComponentData(initialValue.value);
                 }
             },
             { immediate: true }
@@ -318,14 +344,14 @@ export default {
             { elementState: props.wwElementState, emit, sidepanelFormPath: 'form', setValue: setComponentData }
         );
 
-        const fileList = computed(() => [...existingFiles.value, ...newFiles.value]);
+        const fileList = allFiles;
         const hasFiles = computed(() => fileList.value.length > 0);
 
-        watch([status, fileList], ([newStatus, allFiles]) => {
+        watch([status, fileList], ([newStatus, files]) => {
             if (newStatus && typeof newStatus === 'object') {
-                const fileNames = allFiles.map(file => file.name).filter(Boolean);
+                const fileKeys = files.flatMap(file => [file?.id, file?.name].filter(Boolean));
                 const updatedStatus = Object.fromEntries(
-                    Object.entries(newStatus).filter(([key]) => fileNames.includes(key))
+                    Object.entries(newStatus).filter(([key]) => fileKeys.includes(key))
                 );
                 if (Object.keys(updatedStatus).length !== Object.keys(newStatus).length) {
                     setStatus(updatedStatus);
@@ -460,7 +486,7 @@ export default {
                 existingFiles: computed(() => existingFiles.value),
                 newFiles: computed(() => newFiles.value.map(serializeFile)),
                 deletedFiles: computed(() => deletedFiles.value),
-                allFiles: computed(() => [...existingFiles.value, ...newFiles.value.map(serializeFile)]),
+                allFiles: computed(() => allFiles.value.map(serializeFile)),
                 status: status,
                 error: lastError,
             },
@@ -479,8 +505,28 @@ export default {
             return isDragging.value && !isDisabled.value && !isReadonly.value;
         });
 
+        const canAcceptDrop = computed(() => !isDisabled.value && !isReadonly.value && drop.value && !isEditing.value);
+
+        // Cancelling `dragenter` is what makes this element the drag's current target. Without
+        // it the browser retargets to the document, `dragover` never fires here, and the drop
+        // falls through to the browser's own "open this file" handling.
+        //
+        // Both are cancelled unconditionally: claiming the target even when the component
+        // cannot accept files is what stops a stray drop from navigating away from the app.
+        // dropEffect is what tells the user which of the two is happening.
+        const handleDragEnter = event => {
+            event.preventDefault();
+            if (!canAcceptDrop.value) return;
+            event.stopPropagation();
+            isDragging.value = true;
+        };
+
         const handleDragOver = event => {
-            if (isDisabled.value || isReadonly.value || !drop.value || isEditing.value) return;
+            event.preventDefault();
+            if (event.dataTransfer) {
+                event.dataTransfer.dropEffect = canAcceptDrop.value ? 'copy' : 'none';
+            }
+            if (!canAcceptDrop.value) return;
             event.stopPropagation();
             isDragging.value = true;
         };
@@ -498,10 +544,11 @@ export default {
 
         const handleDrop = async event => {
             isDragging.value = false;
-            if (isDisabled.value || isReadonly.value || !drop.value || isEditing.value) return;
+            if (!canAcceptDrop.value) return;
 
-            const items = event.dataTransfer.files;
-            if (!items.length) return;
+            event.stopPropagation();
+            const items = event.dataTransfer?.files;
+            if (!items?.length) return;
 
             await processFiles(items);
         };
@@ -519,7 +566,7 @@ export default {
             const filesToProcess = Array.from(rawFiles);
 
             let availableSlots = Infinity;
-            const currentFileCount = existingFiles.value.length + newFiles.value.length;
+            const currentFileCount = allFiles.value.length;
             if (maxFiles.value > 0) {
                 availableSlots = maxFiles.value - currentFileCount;
                 if (availableSlots <= 0) {
@@ -564,7 +611,8 @@ export default {
                 });
 
                 if (validationResult.valid) {
-                    file.id = `file-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+                    file.id = generateFileId();
+                    file.isNew = true;
                     file.mimeType = file.type;
                     if (exposeBase64.value) file.base64 = await fileToBase64(file);
                     if (exposeBinary.value) file.binary = await fileToBinary(file);
@@ -621,13 +669,7 @@ export default {
             }
 
             if (processedFiles.length > 0) {
-                const updatedNewFiles = [...newFiles.value, ...processedFiles];
-                const newData = {
-                    existingFiles: existingFiles.value,
-                    newFiles: updatedNewFiles,
-                    deletedFiles: deletedFiles.value,
-                    allFiles: [...existingFiles.value, ...updatedNewFiles],
-                };
+                const newData = buildValue([...allFiles.value, ...processedFiles], deletedFiles.value);
                 setComponentData(newData);
                 emit('trigger-event', { name: 'change', event: { value: newData } });
             }
@@ -636,40 +678,21 @@ export default {
         const removeFile = index => {
             if (isDisabled.value || isReadonly.value) return;
 
-            const existingCount = existingFiles.value.length;
-            let newData;
+            const files = [...allFiles.value];
+            if (!Number.isInteger(index) || index < 0 || index >= files.length) return;
 
-            if (index < existingCount) {
-                const removedImage = existingFiles.value[index];
-                const updatedExisting = existingFiles.value.filter((_, i) => i !== index);
-                newData = {
-                    existingFiles: updatedExisting,
-                    newFiles: newFiles.value,
-                    deletedFiles: [...deletedFiles.value, removedImage],
-                    allFiles: [...updatedExisting, ...newFiles.value],
-                };
-            } else {
-                const newFileIndex = index - existingCount;
-                const updatedNewFiles = newFiles.value.filter((_, i) => i !== newFileIndex);
-                newData = {
-                    existingFiles: existingFiles.value,
-                    newFiles: updatedNewFiles,
-                    deletedFiles: deletedFiles.value,
-                    allFiles: [...existingFiles.value, ...updatedNewFiles],
-                };
-            }
+            const [removed] = files.splice(index, 1);
+            // Only files that came from initialValue are reported as deleted: a new file that
+            // is removed before submission never existed as far as the backend is concerned.
+            const updatedDeleted = removed && !removed.isNew ? [...deletedFiles.value, removed] : deletedFiles.value;
 
+            const newData = buildValue(files, updatedDeleted);
             setComponentData(newData);
             emit('trigger-event', { name: 'change', event: { value: newData } });
         };
 
         const clearFiles = () => {
-            const newData = {
-                existingFiles: [],
-                newFiles: [],
-                deletedFiles: [...deletedFiles.value, ...existingFiles.value],
-                allFiles: [],
-            };
+            const newData = buildValue([], [...deletedFiles.value, ...existingFiles.value]);
             setComponentData(newData);
             emit('trigger-event', { name: 'change', event: { value: newData } });
         };
@@ -699,6 +722,7 @@ export default {
         return {
             fileInput,
             fileList,
+            allFiles,
             hasFiles,
             isDraggingState,
             hasError,
@@ -721,6 +745,7 @@ export default {
             getFilePreview,
             truncateFileName,
             openFileExplorer,
+            handleDragEnter,
             handleDragOver,
             handleDragLeave,
             handleDrop,
