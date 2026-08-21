@@ -146,6 +146,7 @@ When placed inside a WeWeb form container, the component supports `fieldName`, `
 
 ## Changelog
 
+8/21/2026 - 3.6.2: fix: give the form an initialValue so resetting a form restores the field, and declare the sidepanel-content event the editor helper emits
 8/21/2026 - 3.6.1: fix: keep the root hit-testable while editing so the element stays selectable on the canvas when disabled, let the dragging state preview from the state picker, guard wwElementState access, and stop offering per-state values on the icon properties
 8/21/2026 - 3.6.0: refactor: port the five component states from the legacy add-state/remove-state emit API to selector-based states, and move the state- and class-aware style properties to the ww-config css() hook
 8/21/2026 - 3.5.0: feat: add border, shadow and visibility (always / on hover) props for the file item remove button, and split style props into a dedicated "File item button" group

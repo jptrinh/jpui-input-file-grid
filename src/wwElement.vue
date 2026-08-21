@@ -103,7 +103,14 @@ export default {
         uid: { type: String, required: true },
         wwElementState: { type: Object, required: true },
     },
-    emits: ['trigger-event', 'add-state', 'remove-state', 'update:content:effect'],
+    emits: [
+        'trigger-event',
+        // Not emitted here, but useForm is handed `emit` and may raise validation states.
+        'add-state',
+        'remove-state',
+        // Editor only: raised by useParentSelection.
+        'update:sidepanel-content',
+    ],
     setup(props, { emit }) {
         const isEditing = computed(() => {
             /* wwEditor:start */
@@ -211,19 +218,26 @@ export default {
         const deletedFiles = computed(() => componentData.value?.deletedFiles || []);
         const lastInitialValue = ref(null);
 
+        // The component's value is an object, so a form reset has to restore that whole
+        // shape — handing the form the raw initialValue array would reset the field to
+        // something no consumer of the variable can read.
+        const initialValue = computed(() => {
+            const initialArray = Array.isArray(props.content?.initialValue) ? props.content.initialValue : [];
+            return {
+                existingFiles: initialArray,
+                newFiles: [],
+                deletedFiles: [],
+                allFiles: initialArray,
+            };
+        });
+
         watch(
-            () => props.content?.initialValue,
+            initialValue,
             newInitialValue => {
-                const initialArray = Array.isArray(newInitialValue) ? newInitialValue : [];
-                const serialized = JSON.stringify(initialArray);
+                const serialized = JSON.stringify(newInitialValue.existingFiles);
                 if (serialized !== lastInitialValue.value) {
                     lastInitialValue.value = serialized;
-                    setComponentData({
-                        existingFiles: initialArray,
-                        newFiles: [],
-                        deletedFiles: [],
-                        allFiles: initialArray,
-                    });
+                    setComponentData(newInitialValue);
                 }
             },
             { immediate: true }
@@ -282,13 +296,13 @@ export default {
         }));
 
         const useForm = inject('_wwForm:useForm', () => {});
-        const fieldName = computed(() => props.content.fieldName);
-        const validation = computed(() => props.content.validation);
-        const customValidation = computed(() => props.content.customValidation);
+        const fieldName = computed(() => props.content?.fieldName);
+        const validation = computed(() => props.content?.validation);
+        const customValidation = computed(() => props.content?.customValidation);
 
         useForm(
             componentData,
-            { fieldName, validation, customValidation, required },
+            { fieldName, validation, customValidation, initialValue, required },
             { elementState: props.wwElementState, emit, sidepanelFormPath: 'form', setValue: setComponentData }
         );
 
